@@ -329,7 +329,7 @@ export default function SchermataCodicePaziente({
           {/* Copyright notice */}
           <View style={{ marginTop: 32, alignItems: 'center' }}>
             <Text style={{ fontSize: 11, color: '#52525B', textAlign: 'center' }}>
-              © 2025-2026 B-sportlab di Federico Baldassarre
+              © 2026 B-sportlab di Federico Baldassarre
             </Text>
             <Text style={{ fontSize: 10, color: '#3F3F46', textAlign: 'center', marginTop: 2 }}>
               Tutti i diritti riservati • Biologo Nutrizionista Sportivo
