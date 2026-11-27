@@ -155,6 +155,18 @@ const [diaryEntries, setDiaryEntries] = useState({ Colazione: [], Pranzo: [], Me
 
   useEffect(() => {
     let active = true;
+
+    // Rileva eventuale codice paziente passato come parametro URL (?code=BS-101 o ?p=BS-101)
+    let urlCode = null;
+    if (typeof window !== 'undefined' && window.location && window.location.search) {
+      try {
+        const searchParams = new URLSearchParams(window.location.search);
+        urlCode = searchParams.get('code') || searchParams.get('c') || searchParams.get('paziente') || searchParams.get('p');
+      } catch (err) {
+        // no-op
+      }
+    }
+
     Promise.all([M.loadLocal(), restoreSession()]).then(([d, session]) => {
       if (!active) return;
       if (d) {
@@ -164,8 +176,12 @@ const [diaryEntries, setDiaryEntries] = useState({ Colazione: [], Pranzo: [], Me
         if (d.weekPlan) setWeekPlan(d.weekPlan);
         if (d.favs) setFavs(d.favs);
       }
-      if (session) {
+      if (session && !urlCode) {
         setRole('doctor');
+      } else if (urlCode) {
+        const cleanCode = urlCode.trim().toUpperCase();
+        setPassInput(cleanCode);
+        syncPaziente(cleanCode);
       } else if (d?.savedCode) {
         syncPaziente(d.savedCode);
       }
@@ -466,7 +482,7 @@ const allTargetDays = useMemo(() => {
     );
   } else if (!quizDone) {
     screenContent = (
-      <SafeAreaView style={[s.bg, { backgroundColor: BG_WHITE }]}>
+      <SafeAreaView style={[s.bg, { backgroundColor: BG_WHITE, flex: 1, minHeight: 0 }]}>
         <View style={s.top}>
           <Image
             source={require('./assets/logo.png')}
@@ -488,7 +504,7 @@ const allTargetDays = useMemo(() => {
             </TouchableOpacity>
           </View>
         </View>
-        <ScrollView contentContainerStyle={s.pad}>
+        <ScrollView style={{ flex: 1, minHeight: 0 }} contentContainerStyle={[s.pad, { flexGrow: 1, paddingBottom: 100 }]}>
           <View style={s.wBox}>
             <Text style={s.wTit}>{t.quizTitle}</Text>
             <Text style={s.wSub}>{t.quizSub}</Text>
@@ -808,7 +824,7 @@ const allTargetDays = useMemo(() => {
       );
 
     screenContent = (
-    <SafeAreaView style={[s.bg, { backgroundColor: BG_WHITE }]}>
+    <SafeAreaView style={[s.bg, { backgroundColor: BG_WHITE, flex: 1, minHeight: 0 }]}>
       <View style={s.top}>
         <Image
           source={require('./assets/logo.png')}
@@ -851,7 +867,7 @@ const allTargetDays = useMemo(() => {
         ))}
       </View>
 
-      <ScrollView contentContainerStyle={s.pad}>
+      <ScrollView style={{ flex: 1, minHeight: 0 }} contentContainerStyle={[s.pad, { flexGrow: 1, paddingBottom: 120 }]}>
         {tab === 'calc' ? (
           <View>
             {paziente.note_dottore && normPaz?.mostra_note_dottore !== false ? (
@@ -1100,7 +1116,7 @@ const allTargetDays = useMemo(() => {
 
   return (
     <ErrorBoundary>
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, minHeight: 0, height: '100%', width: '100%' }}>
         {screenContent}
         <TourGuidatoModal
           visible={showTour}
