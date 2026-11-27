@@ -71,26 +71,27 @@ export default function AdminForm({
 
   // Stato per Visita Antropometrica & Plicometria (FITcompX)
   const [showAntropoModal, setShowAntropoModal] = useState(false);
+  const [showComparisonModal, setShowComparisonModal] = useState(false);
   const [antropoForm, setAntropoForm] = useState({
     dataVisita: new Date().toLocaleDateString('it-IT'),
-    peso: String(cur.peso_visita || '70'),
-    altezza: String(cur.anagrafica?.altezza || '175'),
-    fcr: '60',
-    tricipite: '6.5',
-    scapola: '7.5',
-    torace: '5.0',
-    addominale: '7.0',
-    iliaca: '4.5',
-    coscia: '7.0',
-    braccio: '28.0',
-    vita: '75.0',
-    fianchi: '90.0',
-    cosciaRadice: '58.0',
-    cosciaMediana: '55.0',
-    polso: '6.0',
-    gomito: '7.2',
-    ginocchio: '10.0',
-    caviglia: '8.0',
+    peso: cur.peso_visita ? String(cur.peso_visita) : '',
+    altezza: cur.anagrafica?.altezza ? String(cur.anagrafica.altezza) : '',
+    fcr: '',
+    tricipite: '',
+    scapola: '',
+    torace: '',
+    addominale: '',
+    iliaca: '',
+    coscia: '',
+    braccio: '',
+    vita: '',
+    fianchi: '',
+    cosciaRadice: '',
+    cosciaMediana: '',
+    polso: '',
+    gomito: '',
+    ginocchio: '',
+    caviglia: '',
   });
   const [antropoPreview, setAntropoPreview] = useState(null);
   const [antropoSuccessMsg, setAntropoSuccessMsg] = useState('');
@@ -109,90 +110,246 @@ export default function AdminForm({
     ? cur.visite_antropometriche[cur.visite_antropometriche.length - 1]
     : null;
 
+  const getLastVisitData = () => {
+    if (!lastVisit) return null;
+    const inp = lastVisit.input || {};
+    const res = lastVisit.risultati || {};
+    const pl = res.pliche || {};
+    const ci = res.circ || {};
+    const di = res.diam || {};
+    return {
+      peso: inp.peso !== undefined && inp.peso !== "" ? String(inp.peso) : (res.peso ? String(res.peso) : ""),
+      altezza: inp.altezza !== undefined && inp.altezza !== "" ? String(inp.altezza) : (res.altezza ? String(res.altezza) : ""),
+      fcr: inp.fcr !== undefined && inp.fcr !== "" ? String(inp.fcr) : (res.fcr ? String(res.fcr) : ""),
+      tricipite: inp.tricipite !== undefined && inp.tricipite !== "" ? String(inp.tricipite) : (pl.tricipite !== undefined ? String(pl.tricipite) : ""),
+      scapola: inp.scapola !== undefined && inp.scapola !== "" ? String(inp.scapola) : (pl.scapola !== undefined ? String(pl.scapola) : ""),
+      torace: inp.torace !== undefined && inp.torace !== "" ? String(inp.torace) : (pl.torace !== undefined ? String(pl.torace) : ""),
+      addominale: inp.addominale !== undefined && inp.addominale !== "" ? String(inp.addominale) : (pl.addominale !== undefined ? String(pl.addominale) : ""),
+      iliaca: inp.iliaca !== undefined && inp.iliaca !== "" ? String(inp.iliaca) : (pl.iliaca !== undefined ? String(pl.iliaca) : ""),
+      coscia: inp.coscia !== undefined && inp.coscia !== "" ? String(inp.coscia) : (pl.coscia !== undefined ? String(pl.coscia) : ""),
+      braccio: inp.braccio !== undefined && inp.braccio !== "" ? String(inp.braccio) : (ci.braccio !== undefined ? String(ci.braccio) : ""),
+      vita: inp.vita !== undefined && inp.vita !== "" ? String(inp.vita) : (ci.vita !== undefined ? String(ci.vita) : ""),
+      fianchi: inp.fianchi !== undefined && inp.fianchi !== "" ? String(inp.fianchi) : (ci.fianchi !== undefined ? String(ci.fianchi) : ""),
+      cosciaRadice: inp.cosciaRadice !== undefined && inp.cosciaRadice !== "" ? String(inp.cosciaRadice) : (ci.cosciaRadice !== undefined ? String(ci.cosciaRadice) : ""),
+      cosciaMediana: inp.cosciaMediana !== undefined && inp.cosciaMediana !== "" ? String(inp.cosciaMediana) : (ci.cosciaMediana !== undefined ? String(ci.cosciaMediana) : ""),
+      polso: inp.polso !== undefined && inp.polso !== "" ? String(inp.polso) : (di.polso !== undefined ? String(di.polso) : ""),
+      gomito: inp.gomito !== undefined && inp.gomito !== "" ? String(inp.gomito) : (di.gomito !== undefined ? String(di.gomito) : ""),
+      ginocchio: inp.ginocchio !== undefined && inp.ginocchio !== "" ? String(inp.ginocchio) : (di.ginocchio !== undefined ? String(di.ginocchio) : ""),
+      caviglia: inp.caviglia !== undefined && inp.caviglia !== "" ? String(inp.caviglia) : (di.caviglia !== undefined ? String(di.caviglia) : ""),
+    };
+  };
+
+  const handlePrefillAllFromLast = () => {
+    const lastData = getLastVisitData();
+    if (!lastData) return;
+    setAntropoForm((prev) => ({
+      ...prev,
+      ...lastData,
+      dataVisita: prev.dataVisita || new Date().toLocaleDateString("it-IT"),
+      peso: cur.peso_visita ? String(cur.peso_visita) : (lastData.peso || prev.peso),
+      altezza: cur.anagrafica?.altezza ? String(cur.anagrafica.altezza) : (lastData.altezza || prev.altezza),
+    }));
+  };
+
+  const handleResetPlicheOnly = () => {
+    const lastData = getLastVisitData() || {};
+    setAntropoForm((prev) => ({
+      ...prev,
+      fcr: "",
+      tricipite: "",
+      scapola: "",
+      torace: "",
+      addominale: "",
+      iliaca: "",
+      coscia: "",
+      braccio: "",
+      vita: "",
+      fianchi: "",
+      cosciaRadice: "",
+      cosciaMediana: "",
+      // Mantiene intatti i diametri ossei (scheletrici) e altezza
+      polso: lastData.polso || prev.polso || "",
+      gomito: lastData.gomito || prev.gomito || "",
+      ginocchio: lastData.ginocchio || prev.ginocchio || "",
+      caviglia: lastData.caviglia || prev.caviglia || "",
+    }));
+  };
+
+  const comparisonData = useMemo(() => {
+    const rawList = cur.visite_antropometriche || [];
+    if (rawList.length === 0) return null;
+    const sorted = [...rawList].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+    const first = sorted[0];
+    const last = sorted[sorted.length - 1];
+    const prev = sorted.length >= 2 ? sorted[sorted.length - 2] : null;
+
+    const fRes = first?.risultati || {};
+    const lRes = last?.risultati || {};
+    const pRes = prev?.risultati || {};
+
+    const diff = (a, b) => {
+      const vA = safeNum(a);
+      const vB = safeNum(b);
+      const d = vA - vB;
+      return {
+        val: d,
+        fmt: d > 0 ? `+${d.toFixed(1)}` : d.toFixed(1),
+        str: d === 0 ? "0.0" : (d > 0 ? `+${d.toFixed(1)}` : d.toFixed(1)),
+      };
+    };
+
+    return {
+      sorted,
+      count: sorted.length,
+      first,
+      last,
+      prev,
+      fRes,
+      lRes,
+      pRes,
+      deltaTot: {
+        peso: diff(lRes.peso, fRes.peso),
+        fatKg: diff(lRes.grasso?.kg, fRes.grasso?.kg),
+        fatPct: diff(lRes.grasso?.pct, fRes.grasso?.pct),
+        muscKg: diff(lRes.muscolo?.kg, fRes.muscolo?.kg),
+        muscPct: diff(lRes.muscolo?.pct, fRes.muscolo?.pct),
+        sommaPliche: diff(lRes.pliche?.sommaPliche, fRes.pliche?.sommaPliche),
+        vita: diff(lRes.circ?.vita, fRes.circ?.vita),
+        fianchi: diff(lRes.circ?.fianchi, fRes.circ?.fianchi),
+        braccio: diff(lRes.circ?.braccio, fRes.circ?.braccio),
+        bmr: diff(lRes.metabolismo?.bmrFITcompX, fRes.metabolismo?.bmrFITcompX),
+      },
+      deltaLast: prev ? {
+        peso: diff(lRes.peso, pRes.peso),
+        fatKg: diff(lRes.grasso?.kg, pRes.grasso?.kg),
+        fatPct: diff(lRes.grasso?.pct, pRes.grasso?.pct),
+        muscKg: diff(lRes.muscolo?.kg, pRes.muscolo?.kg),
+        muscPct: diff(lRes.muscolo?.pct, pRes.muscolo?.pct),
+        sommaPliche: diff(lRes.pliche?.sommaPliche, pRes.pliche?.sommaPliche),
+        vita: diff(lRes.circ?.vita, pRes.circ?.vita),
+        fianchi: diff(lRes.circ?.fianchi, pRes.circ?.fianchi),
+      } : null,
+    };
+  }, [cur.visite_antropometriche]);
+
   const handleOpenAntropoModal = () => {
-    if (lastVisit?.input) {
+    const lastData = getLastVisitData();
+    if (lastData) {
       setAntropoForm({
-        ...lastVisit.input,
-        dataVisita: new Date().toLocaleDateString('it-IT'),
-        peso: String(cur.peso_visita || lastVisit.input.peso || '70'),
+        ...lastData,
+        dataVisita: new Date().toLocaleDateString("it-IT"),
+        peso: cur.peso_visita ? String(cur.peso_visita) : (lastData.peso || ""),
+        altezza: cur.anagrafica?.altezza ? String(cur.anagrafica.altezza) : (lastData.altezza || ""),
       });
     } else {
       setAntropoForm({
-        dataVisita: new Date().toLocaleDateString('it-IT'),
-        peso: String(cur.peso_visita || '70'),
-        altezza: String(cur.anagrafica?.altezza || '175'),
-        fcr: '60',
-        tricipite: '6.5',
-        scapola: '7.5',
-        torace: '5.0',
-        addominale: '7.0',
-        iliaca: '4.5',
-        coscia: '7.0',
-        braccio: '28.0',
-        vita: '75.0',
-        fianchi: '90.0',
-        cosciaRadice: '58.0',
-        cosciaMediana: '55.0',
-        polso: '6.0',
-        gomito: '7.2',
-        ginocchio: '10.0',
-        caviglia: '8.0',
+        dataVisita: new Date().toLocaleDateString("it-IT"),
+        peso: cur.peso_visita ? String(cur.peso_visita) : "",
+        altezza: cur.anagrafica?.altezza ? String(cur.anagrafica.altezza) : "",
+        fcr: "",
+        tricipite: "",
+        scapola: "",
+        torace: "",
+        addominale: "",
+        iliaca: "",
+        coscia: "",
+        braccio: "",
+        vita: "",
+        fianchi: "",
+        cosciaRadice: "",
+        cosciaMediana: "",
+        polso: "",
+        gomito: "",
+        ginocchio: "",
+        caviglia: "",
       });
     }
     setAntropoPreview(null);
     setShowAntropoModal(true);
   };
 
-  const getAntropoParams = () => ({
-    sesso: cur.anagrafica?.sesso || 'M',
-    eta: safeNum(cur.anagrafica?.eta) || 25,
-    altezza: safeNum(antropoForm.altezza) || 175,
-    peso: safeNum(antropoForm.peso) || safeNum(cur.peso_visita) || 70,
-    fcr: safeNum(antropoForm.fcr) || 60,
-    tricipite: safeNum(antropoForm.tricipite) || 6.5,
-    scapola: safeNum(antropoForm.scapola) || 7.5,
-    torace: safeNum(antropoForm.torace) || 5.0,
-    addominale: safeNum(antropoForm.addominale) || 7.0,
-    iliaca: safeNum(antropoForm.iliaca) || 4.5,
-    coscia: safeNum(antropoForm.coscia) || 7.0,
-    braccio: safeNum(antropoForm.braccio) || 28.0,
-    vita: safeNum(antropoForm.vita) || 75.0,
-    fianchi: safeNum(antropoForm.fianchi) || 90.0,
-    cosciaRadice: safeNum(antropoForm.cosciaRadice) || 58.0,
-    cosciaMediana: safeNum(antropoForm.cosciaMediana) || 55.0,
-    polso: safeNum(antropoForm.polso) || 6.0,
-    gomito: safeNum(antropoForm.gomito) || 7.2,
-    ginocchio: safeNum(antropoForm.ginocchio) || 10.0,
-    caviglia: safeNum(antropoForm.caviglia) || 8.0,
-    dataVisita: antropoForm.dataVisita || new Date().toLocaleDateString('it-IT'),
-  });
+  const getAntropoParams = () => {
+    let calculatedEta = safeNum(cur.anagrafica?.eta);
+    if (!calculatedEta && cur.anagrafica?.data_nascita) {
+      const parts = String(cur.anagrafica.data_nascita).split(/[\/\-\.]/);
+      if (parts.length === 3) {
+        const d = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10) - 1;
+        const y = parseInt(parts[2], 10);
+        const birth = new Date(y, m, d);
+        if (!isNaN(birth.getTime())) {
+          const now = new Date();
+          calculatedEta = now.getFullYear() - birth.getFullYear();
+          if (now.getMonth() < birth.getMonth() || (now.getMonth() === birth.getMonth() && now.getDate() < birth.getDate())) {
+            calculatedEta--;
+          }
+        }
+      }
+    }
+    const safeEta = calculatedEta > 5 ? calculatedEta : 25;
 
-  const handleCalcAntropo = async () => {
+    const base = {
+      sesso: cur.anagrafica?.sesso || 'M',
+      eta: safeEta,
+      altezza: safeNum(antropoForm.altezza) || safeNum(cur.anagrafica?.altezza) || 175,
+      peso: safeNum(antropoForm.peso) || safeNum(cur.peso_visita) || 70,
+      fcr: safeNum(antropoForm.fcr) || 60,
+      tricipite: safeNum(antropoForm.tricipite),
+      scapola: safeNum(antropoForm.scapola),
+      torace: safeNum(antropoForm.torace),
+      addominale: safeNum(antropoForm.addominale),
+      iliaca: safeNum(antropoForm.iliaca),
+      coscia: safeNum(antropoForm.coscia),
+      braccio: safeNum(antropoForm.braccio),
+      vita: safeNum(antropoForm.vita),
+      fianchi: safeNum(antropoForm.fianchi),
+      cosciaRadice: safeNum(antropoForm.cosciaRadice),
+      cosciaMediana: safeNum(antropoForm.cosciaMediana),
+      polso: safeNum(antropoForm.polso),
+      gomito: safeNum(antropoForm.gomito),
+      ginocchio: safeNum(antropoForm.ginocchio),
+      caviglia: safeNum(antropoForm.caviglia),
+      dataVisita: antropoForm.dataVisita || new Date().toLocaleDateString('it-IT'),
+    };
+
+    return {
+      ...base,
+      pliche: {
+        tricipite: base.tricipite,
+        sottoscapola: base.scapola,
+        scapola: base.scapola,
+        torace: base.torace,
+        addominale: base.addominale,
+        iliaca: base.iliaca,
+        coscia: base.coscia,
+      },
+      circonferenze: {
+        braccio: base.braccio,
+        vita: base.vita,
+        fianchi: base.fianchi,
+        coscia_radice: base.cosciaRadice,
+        coscia_mediana: base.cosciaMediana,
+      },
+      diametri: {
+        polso: base.polso,
+        gomito: base.gomito,
+        ginocchio: base.ginocchio,
+        caviglia: base.caviglia,
+      },
+    };
+  };
+
+  const handleCalcAntropo = () => {
     const params = getAntropoParams();
-    let res = null;
-    try {
-      res = await calcolaAntropometriaServer(params);
-    } catch (e) {
-      console.warn('Calcolo server non riuscito, uso fallback locale:', e);
-    }
-    if (!res) {
-      res = calcolaAntropometria(params);
-    }
+    const res = calcolaAntropometria(params);
     setAntropoPreview(res);
   };
 
-  const handleSaveAntropo = async () => {
+  const handleSaveAntropo = () => {
     let res = antropoPreview;
     if (!res) {
       const params = getAntropoParams();
-      try {
-        res = await calcolaAntropometriaServer(params);
-      } catch (e) {
-        console.warn('Calcolo server non riuscito, uso fallback locale:', e);
-      }
-      if (!res) {
-        res = calcolaAntropometria(params);
-      }
+      res = calcolaAntropometria(params);
     }
 
     const nuovaVisita = {
@@ -251,6 +408,91 @@ export default function AdminForm({
       },
     });
   };
+
+  // Auto-allineamento visite: se una visita salvata ha il default 44 mm ma l'input ha valori diversi, ricalcola al volo
+  useEffect(() => {
+    const rawVisite = cur.visite_antropometriche || [];
+    let hasMismatch = false;
+    const repaired = rawVisite.map((v) => {
+      const inp = v.input || {};
+      const tri = parseFloat(String(inp.tricipite || 0).replace(',', '.'));
+      const sca = parseFloat(String(inp.scapola || inp.sottoscapola || 0).replace(',', '.'));
+      const tor = parseFloat(String(inp.torace || 0).replace(',', '.'));
+      const add = parseFloat(String(inp.addominale || 0).replace(',', '.'));
+      const ili = parseFloat(String(inp.iliaca || 0).replace(',', '.'));
+      const cos = parseFloat(String(inp.coscia || 0).replace(',', '.'));
+      const inputSum = tri + sca + tor + add + ili + cos;
+      if (inputSum > 0 && Math.abs(inputSum - 44) > 1 && v.risultati?.sommaPliche === 44) {
+        hasMismatch = true;
+        const parseNum = (val, fb = 0) => {
+          if (typeof val === 'number') return isNaN(val) ? fb : val;
+          if (!val) return fb;
+          const n = parseFloat(String(val).replace(',', '.').trim());
+          return isNaN(n) ? fb : n;
+        };
+        let etaCalc = parseNum(inp.eta, 0);
+        const dataNascita = cur.piano_dati?.anagrafica?.data_nascita || cur.anagrafica?.data_nascita || '';
+        if (dataNascita) {
+          const parts = dataNascita.split(/[-/.]/);
+          if (parts.length === 3) {
+            const bDate = parts[0].length === 4
+              ? new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10))
+              : new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+            if (!isNaN(bDate.getTime())) {
+              let refDate = new Date();
+              const vDateStr = v.data || inp.dataVisita;
+              if (vDateStr) {
+                const vp = vDateStr.split(/[-/.]/);
+                if (vp.length === 3) {
+                  refDate = vp[0].length === 4
+                    ? new Date(parseInt(vp[0], 10), parseInt(vp[1], 10) - 1, parseInt(vp[2], 10))
+                    : new Date(parseInt(vp[2], 10), parseInt(vp[1], 10) - 1, parseInt(vp[0], 10));
+                }
+              }
+              const diffMs = refDate.getTime() - bDate.getTime();
+              etaCalc = Number((diffMs / (365.25 * 24 * 60 * 60 * 1000)).toFixed(1));
+            }
+          }
+        }
+        if (!etaCalc || etaCalc <= 0) etaCalc = 25;
+        const newRes = calcolaAntropometria({
+          peso: parseNum(inp.peso, cur.peso_visita || 70),
+          altezza: parseNum(inp.altezza, 175),
+          sesso: inp.sesso || cur.piano_dati?.anagrafica?.sesso || cur.anagrafica?.sesso || 'M',
+          eta: etaCalc,
+          fcr: parseNum(inp.fcr, 60),
+          tricipite: tri,
+          scapola: sca,
+          torace: tor,
+          addominale: add,
+          iliaca: ili,
+          coscia: cos,
+          braccio: parseNum(inp.braccio, 30),
+          vita: parseNum(inp.vita, 78),
+          fianchi: parseNum(inp.fianchi, 95),
+          cosciaRadice: parseNum(inp.cosciaRadice, 54),
+          cosciaMediana: parseNum(inp.cosciaMediana, 50),
+          polso: parseNum(inp.polso, 5.5),
+          gomito: parseNum(inp.gomito, 6.8),
+          ginocchio: parseNum(inp.ginocchio, 9.5),
+          caviglia: parseNum(inp.caviglia, 7.0),
+          dataVisita: v.data || inp.dataVisita || '',
+        });
+        return { ...v, risultati: newRes };
+      }
+      return v;
+    });
+    if (hasMismatch) {
+      setCur((prev) => ({
+        ...prev,
+        visite_antropometriche: repaired,
+        piano_dati: {
+          ...(prev.piano_dati || {}),
+          visite_antropometriche: repaired,
+        },
+      }));
+    }
+  }, [cur.codice]);
 
   // Carica libreria integratori frequenti salvata
   useEffect(() => {
@@ -366,15 +608,25 @@ export default function AdminForm({
     });
   };
 
-  // ─── GESTIONE FITNESS WORKOUTS ──────────────────────────────────────────
+  // ─── GESTIONE FITNESS WORKOUTS (FINO A 10 TIPOLOGIE) ───────────────────
   const handleAddWorkout = () => {
     const list = cur.piano_dati?.workouts_fitness || [];
-    if (list.length >= 3) return;
+    if (list.length >= 10) return;
     const nextIdx = list.length + 1;
     const nextId = `w_${Date.now()}`;
+    const baseP = safeNum(cur.piano_dati?.riposo_fitness?.p) || 140;
+    const baseF = safeNum(cur.piano_dati?.riposo_fitness?.f) || 60;
+    const baseC = safeNum(cur.piano_dati?.riposo_fitness?.c) || 160;
+    const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'L'];
+    const letter = letters[nextIdx - 1] || String(nextIdx);
+    
+    // Stima di default bilanciata (+352 kcal: +15g Proteine, +8g Lipidi, +55g Carbo)
     const newW = {
       id: nextId,
-      nome: `Allenamento ${nextIdx}`,
+      nome: `Allenamento ${letter}`,
+      p: String(Math.round(baseP + 15)),
+      f: String(Math.round(baseF + 8)),
+      c: String(Math.round(baseC + 55)),
       delta_kcal: '350',
     };
     updPianoRoot('workouts_fitness', [...list, newW]);
@@ -500,11 +752,15 @@ export default function AdminForm({
     if (!code) return;
     const l = cur.piano_dati?.lingua || 'it';
     const directLink = `${appUrl}/?code=${encodeURIComponent(code)}`;
-    let text = `Ciao! Ecco il tuo accesso personale al piano nutrizionale B-sportlab (Dott. Federico Baldassarre).\n\n🔗 Link Diretto al tuo Piano:\n${directLink}\n\n🔑 Il tuo Codice Paziente: ${code}\n\n(Toccando il link sopra entrerai direttamente nel tuo piano nutrizionale!)`;
+    const pNome = (cur.anagrafica?.nome || '').trim();
+    const ciaoStr = pNome ? `Ciao ${pNome}!` : 'Ciao!';
+    let text = `${ciaoStr} Ecco il tuo accesso personale al piano nutrizionale B-sportlab (Dott. Federico Baldassarre).\n\n🔗 Link Diretto al tuo Piano:\n${directLink}\n\n🔑 Il tuo Codice Paziente: ${code}\n\n(Toccando il link sopra entrerai direttamente nel tuo piano nutrizionale!)`;
     if (l === 'en') {
-      text = `Hi! Here is your personal access to your B-sportlab nutrition plan (Dr. Federico Baldassarre).\n\n🔗 Direct Plan Link:\n${directLink}\n\n🔑 Personal Code: ${code}\n\n(Tap the link above to access your plan directly!)`;
+      const hiStr = pNome ? `Hi ${pNome}!` : 'Hi!';
+      text = `${hiStr} Here is your personal access to your B-sportlab nutrition plan (Dr. Federico Baldassarre).\n\n🔗 Direct Plan Link:\n${directLink}\n\n🔑 Personal Code: ${code}\n\n(Tap the link above to access your plan directly!)`;
     } else if (l === 'fr') {
-      text = `Bonjour! Voici votre accès personnel au plan nutritionnel B-sportlab (Dr. Federico Baldassarre).\n\n🔗 Lien direct:\n${directLink}\n\n🔑 Code personnel: ${code}\n\n(Appuyez sur le lien ci-dessus pour accéder directement à votre plan!)`;
+      const bnjStr = pNome ? `Bonjour ${pNome} !` : 'Bonjour !';
+      text = `${bnjStr} Voici votre accès personnel au plan nutritionnel B-sportlab (Dr. Federico Baldassarre).\n\n🔗 Lien direct:\n${directLink}\n\n🔑 Code personnel: ${code}\n\n(Appuyez sur le lien ci-dessus pour accéder directement à votre plan!)`;
     }
     const url = `https://wa.me/?text=${encodeURI(text)}`;
     Linking.openURL(url).catch(() => {
@@ -666,7 +922,7 @@ export default function AdminForm({
             <Text style={s.lbl}>Nome:</Text>
             <TextInput
               style={s.tInp}
-              placeholder="es. Emanuele"
+              placeholder="Nome"
               value={cur.anagrafica?.nome || ''}
               onChangeText={(v) => updAnagrafica('nome', v)}
             />
@@ -675,7 +931,7 @@ export default function AdminForm({
             <Text style={s.lbl}>Cognome:</Text>
             <TextInput
               style={s.tInp}
-              placeholder="es. Parianotti"
+              placeholder="Cognome"
               value={cur.anagrafica?.cognome || ''}
               onChangeText={(v) => updAnagrafica('cognome', v)}
             />
@@ -717,7 +973,7 @@ export default function AdminForm({
             <TextInput
               style={s.tInp}
               autoCapitalize="characters"
-              placeholder="es. PRNMNL..."
+              placeholder="Codice Fiscale"
               value={cur.anagrafica?.codice_fiscale || ''}
               onChangeText={(v) => updAnagrafica('codice_fiscale', v)}
             />
@@ -727,7 +983,7 @@ export default function AdminForm({
             <TextInput
               style={s.tInp}
               keyboardType="phone-pad"
-              placeholder="es. 340 1234567"
+              placeholder="Cellulare"
               value={cur.anagrafica?.telefono || ''}
               onChangeText={(v) => updAnagrafica('telefono', v)}
             />
@@ -741,7 +997,7 @@ export default function AdminForm({
               style={s.tInp}
               keyboardType="email-address"
               autoCapitalize="none"
-              placeholder="es. emanuele@gmail.com"
+              placeholder="Email"
               value={cur.anagrafica?.email || ''}
               onChangeText={(v) => updAnagrafica('email', v)}
             />
@@ -750,7 +1006,7 @@ export default function AdminForm({
             <Text style={s.lbl}>Residenza / Città:</Text>
             <TextInput
               style={s.tInp}
-              placeholder="es. Milano"
+              placeholder="Città"
               value={cur.anagrafica?.residenza || ''}
               onChangeText={(v) => updAnagrafica('residenza', v)}
             />
@@ -811,7 +1067,8 @@ export default function AdminForm({
             <TextInput
               style={s.inp}
               keyboardType="numeric"
-              value={String(cur.peso_visita ?? '70')}
+              placeholder="kg"
+              value={cur.peso_visita !== undefined && cur.peso_visita !== null && cur.peso_visita !== '' ? String(cur.peso_visita) : ''}
               onChangeText={(v) => setCur({ ...cur, peso_visita: v })}
             />
           </View>
@@ -820,8 +1077,8 @@ export default function AdminForm({
             <TextInput
               style={s.inp}
               keyboardType="numeric"
-              placeholder="es. 188"
-              value={String(cur.anagrafica?.altezza || '175')}
+              placeholder="cm"
+              value={cur.anagrafica?.altezza ? String(cur.anagrafica.altezza) : ''}
               onChangeText={(v) => updAnagrafica('altezza', v)}
             />
           </View>
@@ -887,12 +1144,36 @@ export default function AdminForm({
               Modello a 4 compartimenti (Grasso, Muscolo, Ossa, Liquidi - Stile FITcompX)
             </Text>
           </View>
-          <TouchableOpacity
-            style={[s.btn, { marginTop: 0, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: '#0284C7', borderColor: '#0369A1' }]}
-            onPress={handleOpenAntropoModal}
-          >
-            <Text style={[s.btnTxt, { color: '#FFFFFF', fontSize: 12 }]}>+ Nuova Visita</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+            {(cur.visite_antropometriche || []).length >= 1 ? (
+              <TouchableOpacity
+                style={[
+                  s.btn,
+                  {
+                    marginTop: 0,
+                    paddingVertical: 8,
+                    paddingHorizontal: 12,
+                    backgroundColor: '#10B981',
+                    borderColor: '#059669',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 5,
+                  },
+                ]}
+                onPress={() => setShowComparisonModal(true)}
+              >
+                <Text style={[s.btnTxt, { color: '#FFFFFF', fontSize: 12, fontWeight: 'bold' }]}>
+                  🖥️ Mostra Confronto al Paziente
+                </Text>
+              </TouchableOpacity>
+            ) : null}
+            <TouchableOpacity
+              style={[s.btn, { marginTop: 0, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: '#0284C7', borderColor: '#0369A1' }]}
+              onPress={handleOpenAntropoModal}
+            >
+              <Text style={[s.btnTxt, { color: '#FFFFFF', fontSize: 12 }]}>+ Nuova Visita</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Toggle Visibilità Referto al Paziente */}
@@ -971,23 +1252,43 @@ export default function AdminForm({
                     </TouchableOpacity>
                   </View>
                   <Text style={{ fontSize: 12, color: '#334155', marginTop: 4 }}>
-                    • Grasso: <Text style={{ fontWeight: 'bold' }}>{r.grasso?.pct ?? '-'}%</Text> ({r.grasso?.kg ?? '-'} kg) • Muscolo: <Text style={{ fontWeight: 'bold' }}>{r.muscolo?.pct ?? '-'}%</Text> ({r.muscolo?.kg ?? '-'} kg) • BMR: <Text style={{ fontWeight: 'bold' }}>{r.metabolismo?.bmrFITcompX ?? '-'} kcal</Text>
+                    • Grasso: <Text style={{ fontWeight: 'bold' }}>{r.grasso?.pct ?? '-'}%</Text> ({r.grasso?.kg ?? '-'} kg) • Muscolo: <Text style={{ fontWeight: 'bold' }}>{r.muscolo?.pct ?? '-'}%</Text> ({r.muscolo?.kg ?? '-'} kg)
                   </Text>
-                  {r.metabolismo?.bmrFITcompX ? (
-                    <TouchableOpacity
-                      onPress={() => {
-                        const bmrVal = String(r.metabolismo.bmrFITcompX);
-                        updPianoRoot('bmr_base', bmrVal);
-                        setAntropoSuccessMsg(`✅ BMR applicato: ${bmrVal} kcal!`);
-                        setTimeout(() => setAntropoSuccessMsg(''), 2500);
-                      }}
-                      style={{ marginTop: 6, alignSelf: 'flex-start', backgroundColor: '#F0FDF4', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, borderWidth: 1, borderColor: '#86EFAC' }}
-                    >
-                      <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#166534' }}>
-                        💡 Applica {r.metabolismo.bmrFITcompX} kcal come Basale (BMR) del piano
-                      </Text>
-                    </TouchableOpacity>
-                  ) : null}
+                  <Text style={{ fontSize: 11.5, color: '#1E293B', marginTop: 2 }}>
+                    🔥 BMR FITcompX: <Text style={{ fontWeight: 'bold', color: '#166534' }}>{r.metabolismo?.bmrFITcompX ?? '-'} kcal</Text> • BMR Harris-Benedict: <Text style={{ fontWeight: 'bold', color: '#1D4ED8' }}>{r.metabolismo?.bmrHarrisBenedict ?? '-'} kcal</Text>
+                  </Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+                    {r.metabolismo?.bmrFITcompX ? (
+                      <TouchableOpacity
+                        onPress={() => {
+                          const bmrVal = String(r.metabolismo.bmrFITcompX);
+                          updPianoRoot('bmr_base', bmrVal);
+                          setAntropoSuccessMsg(`✅ BMR FITcompX applicato al piano: ${bmrVal} kcal!`);
+                          setTimeout(() => setAntropoSuccessMsg(''), 2500);
+                        }}
+                        style={{ backgroundColor: '#F0FDF4', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, borderWidth: 1, borderColor: '#86EFAC' }}
+                      >
+                        <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#166534' }}>
+                          ⚡ Applica FITcompX ({r.metabolismo.bmrFITcompX} kcal)
+                        </Text>
+                      </TouchableOpacity>
+                    ) : null}
+                    {r.metabolismo?.bmrHarrisBenedict ? (
+                      <TouchableOpacity
+                        onPress={() => {
+                          const bmrVal = String(r.metabolismo.bmrHarrisBenedict);
+                          updPianoRoot('bmr_base', bmrVal);
+                          setAntropoSuccessMsg(`✅ BMR Harris-Benedict applicato al piano: ${bmrVal} kcal!`);
+                          setTimeout(() => setAntropoSuccessMsg(''), 2500);
+                        }}
+                        style={{ backgroundColor: '#EFF6FF', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, borderWidth: 1, borderColor: '#93C5FD' }}
+                      >
+                        <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#1D4ED8' }}>
+                          📊 Applica Harris-Benedict ({r.metabolismo.bmrHarrisBenedict} kcal)
+                        </Text>
+                      </TouchableOpacity>
+                    ) : null}
+                  </View>
                 </View>
               );
             })
@@ -1207,61 +1508,111 @@ export default function AdminForm({
 
             <View style={{ marginTop: 14 }}>
               <View style={s.rowBet}>
-                <Text style={[s.bold, { color: LIME_TEXT }]}>🔥 Tipologie Giorni di Allenamento (Max 3):</Text>
-                {(cur.piano_dati?.workouts_fitness || []).length < 3 ? (
+                <Text style={[s.bold, { color: LIME_TEXT }]}>🔥 Tipologie Giorni di Allenamento (Fino a 10):</Text>
+                {(cur.piano_dati?.workouts_fitness || []).length < 10 ? (
                   <TouchableOpacity onPress={handleAddWorkout}>
-                    <Text style={{ color: LIME_TEXT, fontWeight: 'bold', fontSize: 13 }}>+ Aggiungi Tipo</Text>
+                    <Text style={{ color: LIME_TEXT, fontWeight: 'bold', fontSize: 13 }}>+ Aggiungi Tipo (max 10)</Text>
                   </TouchableOpacity>
                 ) : null}
               </View>
 
               {(cur.piano_dati?.workouts_fitness || []).map((w, idx) => {
-                const deltaKcal = safeNum(w.delta_kcal) || 300;
-                const extraCarbo = Math.round(deltaKcal / 4);
                 const baseP = safeNum(cur.piano_dati?.riposo_fitness?.p || 140);
                 const baseF = safeNum(cur.piano_dati?.riposo_fitness?.f || 60);
                 const baseC = safeNum(cur.piano_dati?.riposo_fitness?.c || 160);
-                const totC = baseC + extraCarbo;
-                const totKcal = (baseP * 4) + (baseF * 9) + (totC * 4);
-                const pKcal = Math.round(baseP * 4);
-                const fKcal = Math.round(baseF * 9);
-                const cKcal = Math.round(totC * 4);
+                const restKcal = (baseP * 4) + (baseF * 9) + (baseC * 4);
+
+                let p = w.p !== undefined && w.p !== '' ? safeNum(w.p) : null;
+                let f = w.f !== undefined && w.f !== '' ? safeNum(w.f) : null;
+                let c = w.c !== undefined && w.c !== '' ? safeNum(w.c) : null;
+
+                if (p === null || f === null || c === null) {
+                  const deltaKcal = safeNum(w.delta_kcal) || 350;
+                  p = baseP + Math.round((deltaKcal * 0.20) / 4);
+                  f = baseF + Math.round((deltaKcal * 0.20) / 9);
+                  c = baseC + Math.round((deltaKcal * 0.60) / 4);
+                }
+
+                const pKcal = Math.round(p * 4);
+                const fKcal = Math.round(f * 9);
+                const cKcal = Math.round(c * 4);
+                const totKcal = pKcal + fKcal + cKcal;
+                const pPct = totKcal > 0 ? Math.round((pKcal / totKcal) * 100) : 0;
+                const fPct = totKcal > 0 ? Math.round((fKcal / totKcal) * 100) : 0;
+                const cPct = totKcal > 0 ? Math.round((cKcal / totKcal) * 100) : 0;
+                const diffKcal = totKcal - restKcal;
 
                 return (
-                  <View key={w.id || idx} style={[s.card, { marginTop: 8, padding: 12, backgroundColor: '#F8FAFC' }]}>
+                  <View key={w.id || idx} style={[s.card, { marginTop: 10, padding: 12, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#CBD5E1' }]}>
                     <View style={s.rowBet}>
                       <TextInput
-                        style={[s.bold, { flex: 1, fontSize: 14, color: '#0F172A' }]}
+                        style={[s.bold, { flex: 1, fontSize: 14, color: '#0F172A', borderBottomWidth: 1, borderColor: '#E2E8F0', paddingBottom: 4 }]}
                         value={w.nome}
+                        placeholder={`Allenamento ${idx + 1}`}
                         onChangeText={(v) => handleUpdWorkout(w.id, 'nome', v)}
                       />
                       {(cur.piano_dati?.workouts_fitness || []).length > 1 ? (
                         <TouchableOpacity onPress={() => handleRemoveWorkout(w.id)} style={{ paddingLeft: 8 }}>
-                          <Text style={{ color: '#E53E3E', fontWeight: 'bold' }}>✕</Text>
+                          <Text style={{ color: '#E53E3E', fontWeight: 'bold' }}>✕ Rimuovi</Text>
                         </TouchableOpacity>
                       ) : null}
                     </View>
-                    <View style={[s.row, { marginTop: 6 }]}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={s.lbl}>Delta Calorie (+kcal):</Text>
+
+                    {/* Macro Inputs per questo giorno di allenamento */}
+                    <View style={[s.row, { marginTop: 8 }]}>
+                      <View style={s.col}>
+                        <Text style={s.lbl}>Prot P (g):</Text>
                         <TextInput
                           style={s.inp}
                           keyboardType="numeric"
-                          value={String(w.delta_kcal)}
-                          onChangeText={(v) => handleUpdWorkout(w.id, 'delta_kcal', v)}
+                          value={String(w.p !== undefined ? w.p : p)}
+                          onChangeText={(v) => handleUpdWorkout(w.id, 'p', v)}
                         />
+                        <Text style={{ fontSize: 11, color: '#475569', marginTop: 2 }}>{pKcal} kcal ({pPct}%)</Text>
                       </View>
-                      <View style={{ flex: 2, paddingLeft: 12, justifyContent: 'center' }}>
-                        <Text style={[s.txt, { fontWeight: 'bold', color: LIME_TEXT }]}>
-                          Totale: ~{totKcal} kcal (+{extraCarbo}g Carbo)
-                        </Text>
-                        <Text style={[s.txt, { fontSize: 11, color: '#475569', marginTop: 1 }]}>
-                          Macro: P {pKcal} • L {fKcal} • C {cKcal} kcal
-                        </Text>
-                        <Text style={[s.txt, { fontSize: 10, color: '#64748B' }]}>
-                          C: {M.calcGPerKg(totC, startWeight)} g/kg • Acqua: +500ml
-                        </Text>
+                      <View style={s.col}>
+                        <Text style={s.lbl}>Grassi L (g):</Text>
+                        <TextInput
+                          style={s.inp}
+                          keyboardType="numeric"
+                          value={String(w.f !== undefined ? w.f : f)}
+                          onChangeText={(v) => handleUpdWorkout(w.id, 'f', v)}
+                        />
+                        <Text style={{ fontSize: 11, color: '#475569', marginTop: 2 }}>{fKcal} kcal ({fPct}%)</Text>
                       </View>
+                      <View style={s.col}>
+                        <Text style={s.lbl}>Carbo C (g):</Text>
+                        <TextInput
+                          style={s.inp}
+                          keyboardType="numeric"
+                          value={String(w.c !== undefined ? w.c : c)}
+                          onChangeText={(v) => handleUpdWorkout(w.id, 'c', v)}
+                        />
+                        <Text style={{ fontSize: 11, color: '#475569', marginTop: 2 }}>{cKcal} kcal ({cPct}%)</Text>
+                      </View>
+                    </View>
+
+                    {/* Box Riepilogo Calorie e Surplus rispetto al Riposo */}
+                    <View style={[s.wBox, { backgroundColor: '#F0FDF4', borderColor: '#86EFAC', marginTop: 4, marginBottom: 4, padding: 8 }]}>
+                      <View style={s.rowBet}>
+                        <Text style={[s.bold, { color: '#166534', fontSize: 12.5 }]}>
+                          Totale: ~{totKcal} kcal ({diffKcal >= 0 ? `+${diffKcal}` : diffKcal} kcal vs Riposo)
+                        </Text>
+                        <TouchableOpacity
+                          onPress={() => {
+                            // Reimposta stima di default bilanciata (+15g P, +8g F, +55g C)
+                            handleUpdWorkout(w.id, 'p', String(Math.round(baseP + 15)));
+                            handleUpdWorkout(w.id, 'f', String(Math.round(baseF + 8)));
+                            handleUpdWorkout(w.id, 'c', String(Math.round(baseC + 55)));
+                          }}
+                          style={{ backgroundColor: '#DCFCE7', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, borderWidth: 1, borderColor: '#86EFAC' }}
+                        >
+                          <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#166534' }}>⚡ Reset Stima (+350 kcal)</Text>
+                        </TouchableOpacity>
+                      </View>
+                      <Text style={{ fontSize: 10.5, color: '#15803D', marginTop: 2 }}>
+                        P: {M.calcGPerKg(p, startWeight)} • L: {M.calcGPerKg(f, startWeight)} • C: {M.calcGPerKg(c, startWeight)} g/kg • Acqua: +500ml
+                      </Text>
                     </View>
                   </View>
                 );
@@ -1871,7 +2222,7 @@ export default function AdminForm({
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <View>
                 <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#0F172A' }}>
-                  🩺 Nuova Visita Antropometrica
+                  {lastVisit ? `🩺 Visita di Controllo (Visita #${(cur.visite_antropometriche || []).length + 1})` : '🩺 Nuova Visita Antropometrica (Prima Visita)'}
                 </Text>
                 <Text style={{ fontSize: 12, color: '#64748B' }}>
                   {cur.anagrafica?.nome ? `${cur.anagrafica.nome} ${cur.anagrafica.cognome || ''}` : cur.codice}
@@ -1881,6 +2232,36 @@ export default function AdminForm({
                 <Text style={{ fontSize: 14, color: '#94A3B8', fontWeight: 'bold' }}>✕ Chiudi</Text>
               </TouchableOpacity>
             </View>
+
+            {/* Banner Visita Successiva con Azioni Rapide */}
+            {lastVisit ? (
+              <View style={{ backgroundColor: '#EFF6FF', borderWidth: 1, borderColor: '#93C5FD', borderRadius: 8, padding: 10, marginBottom: 10 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}>
+                  <View style={{ flex: 1, minWidth: 200 }}>
+                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#1E40AF' }}>
+                      🔄 Dati Visita Precedente ({lastVisit.data || 'Registrata'})
+                    </Text>
+                    <Text style={{ fontSize: 11, color: '#3B82F6', marginTop: 1 }}>
+                      Altezza e diametri ossei fissi ereditati. I valori precedenti sono indicati accanto ad ogni voce.
+                    </Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', gap: 6 }}>
+                    <TouchableOpacity
+                      onPress={handlePrefillAllFromLast}
+                      style={{ backgroundColor: '#DBEAFE', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 6, borderWidth: 1, borderColor: '#93C5FD' }}
+                    >
+                      <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#1E40AF' }}>📋 Clona Pliche</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={handleResetPlicheOnly}
+                      style={{ backgroundColor: '#F8FAFC', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 6, borderWidth: 1, borderColor: '#CBD5E1' }}
+                    >
+                      <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#475569' }}>🧹 Azzera Pliche</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            ) : null}
 
             <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 520 }}>
               {/* 1. Dati Generali */}
@@ -1930,16 +2311,16 @@ export default function AdminForm({
               <View style={[s.card, { padding: 10, marginBottom: 10 }]}>
                 <Text style={[s.lbl, { color: '#0369A1', marginBottom: 6 }]}>2. Plicometria (6 Pliche in mm):</Text>
                 {[
-                  ['tricipite', 'Tricipite', lastVisit?.input?.tricipite],
-                  ['scapola', 'Sottoscapolare', lastVisit?.input?.scapola],
-                  ['torace', 'Torace / Petto', lastVisit?.input?.torace],
-                  ['addominale', 'Addominale', lastVisit?.input?.addominale],
-                  ['iliaca', 'Soprailiaca', lastVisit?.input?.iliaca],
-                  ['coscia', 'Coscia', lastVisit?.input?.coscia],
+                  ['tricipite', 'Tricipite', getLastVisitData()?.tricipite],
+                  ['scapola', 'Sottoscapolare', getLastVisitData()?.scapola],
+                  ['torace', 'Torace / Petto', getLastVisitData()?.torace],
+                  ['addominale', 'Addominale', getLastVisitData()?.addominale],
+                  ['iliaca', 'Soprailiaca', getLastVisitData()?.iliaca],
+                  ['coscia', 'Coscia', getLastVisitData()?.coscia],
                 ].map(([fKey, fLbl, pVal]) => (
                   <View key={fKey} style={[s.rowBet, { alignItems: 'center', marginBottom: 6 }]}>
                     <Text style={{ fontSize: 12, color: '#334155', flex: 1 }}>
-                      • {fLbl} {pVal !== undefined ? <Text style={{ color: '#94A3B8', fontSize: 11 }}>(prec: {pVal}mm)</Text> : null}
+                      • {fLbl} {Boolean(pVal) ? <Text style={{ color: '#94A3B8', fontSize: 11 }}>(prec: {pVal}mm)</Text> : null}
                     </Text>
                     <TextInput
                       style={[s.inp, { width: 90, height: 38, paddingVertical: 0 }]}
@@ -1955,15 +2336,15 @@ export default function AdminForm({
               <View style={[s.card, { padding: 10, marginBottom: 10 }]}>
                 <Text style={[s.lbl, { color: '#0369A1', marginBottom: 6 }]}>3. Circonferenze Corporee (cm):</Text>
                 {[
-                  ['braccio', 'Braccio', lastVisit?.input?.braccio],
-                  ['vita', 'Vita (addome stretto)', lastVisit?.input?.vita],
-                  ['fianchi', 'Fianchi (massimo trocantere)', lastVisit?.input?.fianchi],
-                  ['cosciaRadice', 'Coscia Radice (piega glutea)', lastVisit?.input?.cosciaRadice],
-                  ['cosciaMediana', 'Coscia Mediana (metà)', lastVisit?.input?.cosciaMediana],
+                  ['braccio', 'Braccio', getLastVisitData()?.braccio],
+                  ['vita', 'Vita (addome stretto)', getLastVisitData()?.vita],
+                  ['fianchi', 'Fianchi (massimo trocantere)', getLastVisitData()?.fianchi],
+                  ['cosciaRadice', 'Coscia Radice (piega glutea)', getLastVisitData()?.cosciaRadice],
+                  ['cosciaMediana', 'Coscia Mediana (metà)', getLastVisitData()?.cosciaMediana],
                 ].map(([fKey, fLbl, pVal]) => (
                   <View key={fKey} style={[s.rowBet, { alignItems: 'center', marginBottom: 6 }]}>
                     <Text style={{ fontSize: 12, color: '#334155', flex: 1 }}>
-                      • {fLbl} {pVal !== undefined ? <Text style={{ color: '#94A3B8', fontSize: 11 }}>(prec: {pVal}cm)</Text> : null}
+                      • {fLbl} {Boolean(pVal) ? <Text style={{ color: '#94A3B8', fontSize: 11 }}>(prec: {pVal}cm)</Text> : null}
                     </Text>
                     <TextInput
                       style={[s.inp, { width: 90, height: 38, paddingVertical: 0 }]}
@@ -1979,14 +2360,14 @@ export default function AdminForm({
               <View style={[s.card, { padding: 10, marginBottom: 10 }]}>
                 <Text style={[s.lbl, { color: '#0369A1', marginBottom: 6 }]}>4. Diametri Ossei (cm con calibro):</Text>
                 {[
-                  ['polso', 'Polso (bistiloideo)', lastVisit?.input?.polso],
-                  ['gomito', 'Gomito (omero)', lastVisit?.input?.gomito],
-                  ['ginocchio', 'Ginocchio (femore)', lastVisit?.input?.ginocchio],
-                  ['caviglia', 'Caviglia (bimalleolare)', lastVisit?.input?.caviglia],
+                  ['polso', 'Polso (bistiloideo)', getLastVisitData()?.polso],
+                  ['gomito', 'Gomito (omero)', getLastVisitData()?.gomito],
+                  ['ginocchio', 'Ginocchio (femore)', getLastVisitData()?.ginocchio],
+                  ['caviglia', 'Caviglia (bimalleolare)', getLastVisitData()?.caviglia],
                 ].map(([fKey, fLbl, pVal]) => (
                   <View key={fKey} style={[s.rowBet, { alignItems: 'center', marginBottom: 6 }]}>
                     <Text style={{ fontSize: 12, color: '#334155', flex: 1 }}>
-                      • {fLbl} {pVal !== undefined ? <Text style={{ color: '#94A3B8', fontSize: 11 }}>(prec: {pVal}cm)</Text> : null}
+                      • {fLbl} {Boolean(pVal) ? <Text style={{ color: '#94A3B8', fontSize: 11 }}>(prec: {pVal}cm)</Text> : null}
                     </Text>
                     <TextInput
                       style={[s.inp, { width: 90, height: 38, paddingVertical: 0 }]}
@@ -2043,22 +2424,37 @@ export default function AdminForm({
                   </Text>
 
                   <View style={{ borderTopWidth: 1, borderColor: '#E2E8F0', paddingTop: 6, marginTop: 4 }}>
-                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#166534' }}>
-                      🔥 BMR FITcompX: {antropoPreview.metabolismo.bmrFITcompX} kcal (Harris-Benedict: {antropoPreview.metabolismo.bmrHarrisBenedict} kcal)
+                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#166534', marginBottom: 6 }}>
+                      🔥 BMR FITcompX: {antropoPreview.metabolismo.bmrFITcompX} kcal • Harris-Benedict: {antropoPreview.metabolismo.bmrHarrisBenedict} kcal
                     </Text>
-                    <TouchableOpacity
-                      onPress={() => {
-                        const bmrVal = String(antropoPreview.metabolismo.bmrFITcompX);
-                        updPianoRoot('bmr_base', bmrVal);
-                        setAntropoSuccessMsg(`✅ BMR del piano aggiornato a ${bmrVal} kcal!`);
-                        setTimeout(() => setAntropoSuccessMsg(''), 2500);
-                      }}
-                      style={{ marginTop: 6, backgroundColor: '#DCFCE7', borderWidth: 1, borderColor: '#86EFAC', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 6, alignItems: 'center' }}
-                    >
-                      <Text style={{ fontSize: 11.5, fontWeight: 'bold', color: '#15803D' }}>
-                        💡 Applica BMR calcolato ({antropoPreview.metabolismo.bmrFITcompX} kcal) come BMR del piano
-                      </Text>
-                    </TouchableOpacity>
+                    <View style={{ gap: 6 }}>
+                      <TouchableOpacity
+                        onPress={() => {
+                          const bmrVal = String(antropoPreview.metabolismo.bmrFITcompX);
+                          updPianoRoot('bmr_base', bmrVal);
+                          setAntropoSuccessMsg(`✅ BMR del piano aggiornato a ${bmrVal} kcal (FITcompX)!`);
+                          setTimeout(() => setAntropoSuccessMsg(''), 2500);
+                        }}
+                        style={{ backgroundColor: '#DCFCE7', borderWidth: 1, borderColor: '#86EFAC', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 6, alignItems: 'center' }}
+                      >
+                        <Text style={{ fontSize: 11.5, fontWeight: 'bold', color: '#15803D' }}>
+                          ⚡ Applica FITcompX ({antropoPreview.metabolismo.bmrFITcompX} kcal) come BMR del piano
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => {
+                          const bmrVal = String(antropoPreview.metabolismo.bmrHarrisBenedict);
+                          updPianoRoot('bmr_base', bmrVal);
+                          setAntropoSuccessMsg(`✅ BMR del piano aggiornato a ${bmrVal} kcal (Harris-Benedict)!`);
+                          setTimeout(() => setAntropoSuccessMsg(''), 2500);
+                        }}
+                        style={{ backgroundColor: '#EFF6FF', borderWidth: 1, borderColor: '#93C5FD', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 6, alignItems: 'center' }}
+                      >
+                        <Text style={{ fontSize: 11.5, fontWeight: 'bold', color: '#1D4ED8' }}>
+                          📊 Applica Harris-Benedict ({antropoPreview.metabolismo.bmrHarrisBenedict} kcal) come BMR del piano
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 </View>
               ) : null}
@@ -2080,6 +2476,387 @@ export default function AdminForm({
           </View>
         </View>
       </Modal>
+      {/* ─── MODAL PRESENTAZIONE STUDIO: CONFRONTO PROGRESSI AL PAZIENTE ─── */}
+      <Modal
+        visible={showComparisonModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowComparisonModal(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: "rgba(15, 23, 42, 0.85)", justifyContent: "center", alignItems: "center", padding: 12 }}>
+          <View
+            style={{
+              backgroundColor: "#FFFFFF",
+              borderRadius: 16,
+              padding: 20,
+              width: "100%",
+              maxWidth: 960,
+              maxHeight: "94%",
+              borderWidth: 1,
+              borderColor: "#CBD5E1",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            {/* Header Presentazione Studio */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                paddingBottom: 14,
+                borderBottomWidth: 1,
+                borderColor: "#E2E8F0",
+                marginBottom: 14,
+              }}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                <View
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 10,
+                    backgroundColor: "#0284C7",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Text style={{ fontSize: 24 }}>📈</Text>
+                </View>
+                <View>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <Text style={{ fontSize: 18, fontWeight: "800", color: "#0F172A" }}>
+                      Evoluzione & Ricomposizione Corporea
+                    </Text>
+                    <View style={{ backgroundColor: "#E0F2FE", paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}>
+                      <Text style={{ fontSize: 11, fontWeight: "bold", color: "#0369A1" }}>FITcompX</Text>
+                    </View>
+                    <View style={{ backgroundColor: "#DCFCE7", paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}>
+                      <Text style={{ fontSize: 11, fontWeight: "bold", color: "#166534" }}>🖥️ Modalità Studio</Text>
+                    </View>
+                  </View>
+                  <Text style={{ fontSize: 13, color: "#64748B", marginTop: 2 }}>
+                    Paziente:{" "}
+                    <Text style={{ fontWeight: "bold", color: "#0F172A" }}>
+                      {cur.anagrafica?.nome ? `${cur.anagrafica.nome} ${cur.anagrafica.cognome || ""}` : cur.codice}
+                    </Text>{" "}
+                    • Codice: <Text style={{ fontWeight: "bold" }}>{cur.codice}</Text> •{" "}
+                    <Text style={{ fontWeight: "600", color: "#0284C7" }}>
+                      {comparisonData?.count || 0} {(comparisonData?.count || 0) === 1 ? "Rilevazione registrata" : "Controlli registrati"}
+                    </Text>
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                onPress={() => setShowComparisonModal(false)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <View
+                  style={{
+                    backgroundColor: "#F1F5F9",
+                    paddingHorizontal: 12,
+                    paddingVertical: 7,
+                    borderRadius: 8,
+                    borderWidth: 1,
+                    borderColor: "#CBD5E1",
+                  }}
+                >
+                  <Text style={{ fontSize: 13, color: "#475569", fontWeight: "bold" }}>✕ Chiudi</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 20 }}>
+              {!comparisonData || comparisonData.count === 0 ? (
+                <View style={{ padding: 20, alignItems: "center" }}>
+                  <Text style={{ fontSize: 14, color: "#64748B" }}>Nessuna visita registrata.</Text>
+                </View>
+              ) : comparisonData.count === 1 ? (
+                <View>
+                  <View style={{ backgroundColor: "#EFF6FF", borderWidth: 1, borderColor: "#93C5FD", borderRadius: 10, padding: 14, marginBottom: 14 }}>
+                    <Text style={{ fontSize: 14, fontWeight: "bold", color: "#1E40AF", marginBottom: 4 }}>
+                      ℹ️ Prima Visita (Baseline Iniziale del {comparisonData.first.data})
+                    </Text>
+                    <Text style={{ fontSize: 12, color: "#2563EB", lineHeight: 18 }}>
+                      Questa è la prima rilevazione antropometrica del paziente. Alla prossima visita di controllo, in questa schermata compariranno automaticamente tutti i grafici di ricomposizione corporea e i delta (kg e % di grasso persi, muscolo guadagnato, calo somma pliche e circonferenza vita).
+                    </Text>
+                  </View>
+                  <View style={[s.card, { padding: 14 }]}>
+                    <Text style={{ fontSize: 14, fontWeight: "bold", color: "#0F172A", marginBottom: 6 }}>
+                      Ripartizione a 4 Compartimenti (Totale 100%):
+                    </Text>
+                    <View style={{ height: 32, flexDirection: "row", borderRadius: 8, overflow: "hidden", borderWidth: 1, borderColor: "#CBD5E1" }}>
+                      <View style={{ flex: comparisonData.fRes.muscolo?.pct || 40, backgroundColor: COLORBLIND_PALETTE.muscolo.bg, justifyContent: "center", alignItems: "center" }}>
+                        <Text style={{ color: "#FFF", fontSize: 11, fontWeight: "bold" }}>{comparisonData.fRes.muscolo?.pct}%</Text>
+                      </View>
+                      <View style={{ flex: comparisonData.fRes.grasso?.pct || 20, backgroundColor: COLORBLIND_PALETTE.grasso.bg, justifyContent: "center", alignItems: "center" }}>
+                        <Text style={{ color: "#FFF", fontSize: 11, fontWeight: "bold" }}>{comparisonData.fRes.grasso?.pct}%</Text>
+                      </View>
+                      <View style={{ flex: comparisonData.fRes.ossa?.pct || 15, backgroundColor: COLORBLIND_PALETTE.ossa.bg, justifyContent: "center", alignItems: "center" }}>
+                        <Text style={{ color: "#FFF", fontSize: 11, fontWeight: "bold" }}>{comparisonData.fRes.ossa?.pct}%</Text>
+                      </View>
+                      <View style={{ flex: comparisonData.fRes.altro?.pct || 25, backgroundColor: COLORBLIND_PALETTE.altro.bg, justifyContent: "center", alignItems: "center" }}>
+                        <Text style={{ color: "#FFF", fontSize: 11, fontWeight: "bold" }}>{comparisonData.fRes.altro?.pct}%</Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              ) : (
+                <View>
+                  {/* SEZIONE 1: 4 KPI CARD DI IMPATTO (DALL INIZIO DEL PERCORSO) */}
+                  <View style={{ marginBottom: 16 }}>
+                    <Text style={{ fontSize: 13, fontWeight: "bold", color: "#0369A1", marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                      🏆 Variazioni Complessive dall’Inizio Percorso ({comparisonData.first.data} ➔ {comparisonData.last.data}):
+                    </Text>
+
+                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+                      {/* KPI 1: PESO */}
+                      <View style={{ flex: 1, minWidth: 200, backgroundColor: "#F8FAFC", borderRadius: 10, padding: 12, borderWidth: 1, borderColor: "#E2E8F0" }}>
+                        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                          <Text style={{ fontSize: 12, fontWeight: "bold", color: "#64748B" }}>⚖️ Peso Corporeo</Text>
+                          <Text style={{ fontSize: 11, color: "#94A3B8" }}>{comparisonData.first.risultati?.peso} ➔ {comparisonData.last.risultati?.peso} kg</Text>
+                        </View>
+                        <Text style={{ fontSize: 22, fontWeight: "800", color: "#0F172A", marginTop: 4 }}>
+                          {comparisonData.last.risultati?.peso} <Text style={{ fontSize: 13, fontWeight: "normal", color: "#64748B" }}>kg</Text>
+                        </Text>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 }}>
+                          <Text style={{ fontSize: 12, fontWeight: "bold", color: comparisonData.deltaTot.peso.val <= 0 ? "#166534" : "#1E40AF" }}>
+                            {comparisonData.deltaTot.peso.str} kg
+                          </Text>
+                          <Text style={{ fontSize: 11, color: "#64748B" }}>totale</Text>
+                        </View>
+                      </View>
+
+                      {/* KPI 2: MASSA GRASSA */}
+                      <View style={{ flex: 1, minWidth: 200, backgroundColor: comparisonData.deltaTot.fatKg.val <= 0 ? "#F0FDF4" : "#FEF2F2", borderRadius: 10, padding: 12, borderWidth: 1, borderColor: comparisonData.deltaTot.fatKg.val <= 0 ? "#86EFAC" : "#FECACA" }}>
+                        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                          <Text style={{ fontSize: 12, fontWeight: "bold", color: comparisonData.deltaTot.fatKg.val <= 0 ? "#15803D" : "#B91C1C" }}>
+                            ⚪ Massa Grassa (Adipe)
+                          </Text>
+                          <Text style={{ fontSize: 11, color: comparisonData.deltaTot.fatKg.val <= 0 ? "#166534" : "#991B1B" }}>
+                            {comparisonData.first.risultati?.grasso?.pct}% ➔ {comparisonData.last.risultati?.grasso?.pct}%
+                          </Text>
+                        </View>
+                        <Text style={{ fontSize: 22, fontWeight: "800", color: comparisonData.deltaTot.fatKg.val <= 0 ? "#14532D" : "#7F1D1D", marginTop: 4 }}>
+                          {comparisonData.last.risultati?.grasso?.kg} <Text style={{ fontSize: 13, fontWeight: "normal" }}>kg ({comparisonData.last.risultati?.grasso?.pct}%)</Text>
+                        </Text>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 }}>
+                          <Text style={{ fontSize: 12, fontWeight: "bold", color: comparisonData.deltaTot.fatKg.val <= 0 ? "#15803D" : "#DC2626" }}>
+                            {comparisonData.deltaTot.fatKg.val <= 0 ? "📉 " : "📈 "}{comparisonData.deltaTot.fatKg.str} kg ({comparisonData.deltaTot.fatPct.str}%)
+                          </Text>
+                        </View>
+                      </View>
+
+                      {/* KPI 3: MASSA MUSCOLARE */}
+                      <View style={{ flex: 1, minWidth: 200, backgroundColor: comparisonData.deltaTot.muscKg.val >= 0 ? "#F0FDF4" : "#F8FAFC", borderRadius: 10, padding: 12, borderWidth: 1, borderColor: comparisonData.deltaTot.muscKg.val >= 0 ? "#86EFAC" : "#E2E8F0" }}>
+                        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                          <Text style={{ fontSize: 12, fontWeight: "bold", color: comparisonData.deltaTot.muscKg.val >= 0 ? "#15803D" : "#475569" }}>
+                            🥩 Massa Muscolare Attiva
+                          </Text>
+                          <Text style={{ fontSize: 11, color: "#64748B" }}>
+                            {comparisonData.first.risultati?.muscolo?.pct}% ➔ {comparisonData.last.risultati?.muscolo?.pct}%
+                          </Text>
+                        </View>
+                        <Text style={{ fontSize: 22, fontWeight: "800", color: comparisonData.deltaTot.muscKg.val >= 0 ? "#14532D" : "#0F172A", marginTop: 4 }}>
+                          {comparisonData.last.risultati?.muscolo?.kg} <Text style={{ fontSize: 13, fontWeight: "normal" }}>kg ({comparisonData.last.risultati?.muscolo?.pct}%)</Text>
+                        </Text>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 }}>
+                          <Text style={{ fontSize: 12, fontWeight: "bold", color: comparisonData.deltaTot.muscKg.val >= 0 ? "#15803D" : "#64748B" }}>
+                            {comparisonData.deltaTot.muscKg.val >= 0 ? "📈 " : ""}{comparisonData.deltaTot.muscKg.str} kg ({comparisonData.deltaTot.muscPct.str}%)
+                          </Text>
+                          <Text style={{ fontSize: 11, color: "#64748B" }}>tonificazione</Text>
+                        </View>
+                      </View>
+
+                      {/* KPI 4: PLICOMETRIA & CIRCONFERENZE */}
+                      <View style={{ flex: 1, minWidth: 200, backgroundColor: "#F8FAFC", borderRadius: 10, padding: 12, borderWidth: 1, borderColor: "#E2E8F0" }}>
+                        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                          <Text style={{ fontSize: 12, fontWeight: "bold", color: "#64748B" }}>📏 Somma 6 Pliche</Text>
+                          <Text style={{ fontSize: 11, color: "#64748B" }}>Vita: {comparisonData.last.risultati?.circ?.vita || "-"} cm</Text>
+                        </View>
+                        <Text style={{ fontSize: 22, fontWeight: "800", color: "#0F172A", marginTop: 4 }}>
+                          {comparisonData.last.risultati?.pliche?.sommaPliche || "-"} <Text style={{ fontSize: 13, fontWeight: "normal", color: "#64748B" }}>mm</Text>
+                        </Text>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 }}>
+                          <Text style={{ fontSize: 12, fontWeight: "bold", color: comparisonData.deltaTot.sommaPliche.val <= 0 ? "#166534" : "#DC2626" }}>
+                            {comparisonData.deltaTot.sommaPliche.str} mm
+                          </Text>
+                          <Text style={{ fontSize: 11, color: "#64748B" }}>• Vita: {comparisonData.deltaTot.vita.str} cm</Text>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+
+                  {/* SEZIONE 2: CONFRONTO GRAFICO VISIVO PRIMA VS ULTIMA VISITA */}
+                  <View style={[s.card, { padding: 14, marginBottom: 16 }]}>
+                    <Text style={{ fontSize: 13, fontWeight: "bold", color: "#0369A1", marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                      📊 Confronto Visivo Ricomposizione Corporea (Prima Visita vs Oggi):
+                    </Text>
+
+                    {/* Barra Prima Visita */}
+                    <View style={{ marginBottom: 10 }}>
+                      <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 3 }}>
+                        <Text style={{ fontSize: 12, fontWeight: "bold", color: "#475569" }}>
+                          📅 Inizio: {comparisonData.first.data} ({comparisonData.first.risultati?.peso} kg)
+                        </Text>
+                        <Text style={{ fontSize: 11, color: "#64748B" }}>
+                          Muscolo {comparisonData.first.risultati?.muscolo?.pct}% • Grasso {comparisonData.first.risultati?.grasso?.pct}%
+                        </Text>
+                      </View>
+                      <View style={{ height: 26, flexDirection: "row", borderRadius: 6, overflow: "hidden", borderWidth: 1, borderColor: "#CBD5E1" }}>
+                        <View style={{ flex: comparisonData.first.risultati?.muscolo?.pct || 40, backgroundColor: COLORBLIND_PALETTE.muscolo.bg, justifyContent: "center", alignItems: "center" }}>
+                          <Text style={{ color: "#FFF", fontSize: 10, fontWeight: "bold" }}>{comparisonData.first.risultati?.muscolo?.pct}%</Text>
+                        </View>
+                        <View style={{ flex: comparisonData.first.risultati?.grasso?.pct || 20, backgroundColor: COLORBLIND_PALETTE.grasso.bg, justifyContent: "center", alignItems: "center" }}>
+                          <Text style={{ color: "#FFF", fontSize: 10, fontWeight: "bold" }}>{comparisonData.first.risultati?.grasso?.pct}%</Text>
+                        </View>
+                        <View style={{ flex: comparisonData.first.risultati?.ossa?.pct || 15, backgroundColor: COLORBLIND_PALETTE.ossa.bg, justifyContent: "center", alignItems: "center" }}>
+                          <Text style={{ color: "#FFF", fontSize: 10, fontWeight: "bold" }}>{comparisonData.first.risultati?.ossa?.pct}%</Text>
+                        </View>
+                        <View style={{ flex: comparisonData.first.risultati?.altro?.pct || 25, backgroundColor: COLORBLIND_PALETTE.altro.bg, justifyContent: "center", alignItems: "center" }}>
+                          <Text style={{ color: "#FFF", fontSize: 10, fontWeight: "bold" }}>{comparisonData.first.risultati?.altro?.pct}%</Text>
+                        </View>
+                      </View>
+                    </View>
+
+                    {/* Barra Ultima Visita */}
+                    <View style={{ marginBottom: 10 }}>
+                      <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 3 }}>
+                        <Text style={{ fontSize: 12, fontWeight: "bold", color: "#0F172A" }}>
+                          📅 Oggi: {comparisonData.last.data} ({comparisonData.last.risultati?.peso} kg)
+                        </Text>
+                        <Text style={{ fontSize: 11, fontWeight: "bold", color: "#166534" }}>
+                          Muscolo {comparisonData.last.risultati?.muscolo?.pct}% • Grasso {comparisonData.last.risultati?.grasso?.pct}%
+                        </Text>
+                      </View>
+                      <View style={{ height: 26, flexDirection: "row", borderRadius: 6, overflow: "hidden", borderWidth: 1, borderColor: "#86EFAC" }}>
+                        <View style={{ flex: comparisonData.last.risultati?.muscolo?.pct || 40, backgroundColor: COLORBLIND_PALETTE.muscolo.bg, justifyContent: "center", alignItems: "center" }}>
+                          <Text style={{ color: "#FFF", fontSize: 10, fontWeight: "bold" }}>{comparisonData.last.risultati?.muscolo?.pct}%</Text>
+                        </View>
+                        <View style={{ flex: comparisonData.last.risultati?.grasso?.pct || 20, backgroundColor: COLORBLIND_PALETTE.grasso.bg, justifyContent: "center", alignItems: "center" }}>
+                          <Text style={{ color: "#FFF", fontSize: 10, fontWeight: "bold" }}>{comparisonData.last.risultati?.grasso?.pct}%</Text>
+                        </View>
+                        <View style={{ flex: comparisonData.last.risultati?.ossa?.pct || 15, backgroundColor: COLORBLIND_PALETTE.ossa.bg, justifyContent: "center", alignItems: "center" }}>
+                          <Text style={{ color: "#FFF", fontSize: 10, fontWeight: "bold" }}>{comparisonData.last.risultati?.ossa?.pct}%</Text>
+                        </View>
+                        <View style={{ flex: comparisonData.last.risultati?.altro?.pct || 25, backgroundColor: COLORBLIND_PALETTE.altro.bg, justifyContent: "center", alignItems: "center" }}>
+                          <Text style={{ color: "#FFF", fontSize: 10, fontWeight: "bold" }}>{comparisonData.last.risultati?.altro?.pct}%</Text>
+                        </View>
+                      </View>
+                    </View>
+
+                    {/* Legenda Colori */}
+                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 }}>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                        <View style={{ width: 12, height: 12, backgroundColor: COLORBLIND_PALETTE.muscolo.bg, borderRadius: 3 }} />
+                        <Text style={{ fontSize: 11, color: "#475569" }}>Muscolo (Massa Magra attiva)</Text>
+                      </View>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                        <View style={{ width: 12, height: 12, backgroundColor: COLORBLIND_PALETTE.grasso.bg, borderRadius: 3 }} />
+                        <Text style={{ fontSize: 11, color: "#475569" }}>Grasso (Adipe totale)</Text>
+                      </View>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                        <View style={{ width: 12, height: 12, backgroundColor: COLORBLIND_PALETTE.ossa.bg, borderRadius: 3 }} />
+                        <Text style={{ fontSize: 11, color: "#475569" }}>Ossa (Scheletro)</Text>
+                      </View>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                        <View style={{ width: 12, height: 12, backgroundColor: COLORBLIND_PALETTE.altro.bg, borderRadius: 3 }} />
+                        <Text style={{ fontSize: 11, color: "#475569" }}>Altro / Liquidi</Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  {/* SEZIONE 3: TABELLA COMPARATIVA DETTAGLIATA MULTI-VISITA */}
+                  <View style={[s.card, { padding: 14, marginBottom: 16 }]}>
+                    <Text style={{ fontSize: 13, fontWeight: "bold", color: "#0369A1", marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                      📋 Tabella Comparativa Completa di Tutte le Visite:
+                    </Text>
+
+                    <ScrollView horizontal showsHorizontalScrollIndicator>
+                      <View style={{ minWidth: 620 }}>
+                        {/* Riga Intestazione */}
+                        <View style={{ flexDirection: "row", backgroundColor: "#0F172A", borderTopLeftRadius: 8, borderTopRightRadius: 8, paddingVertical: 8, paddingHorizontal: 6 }}>
+                          <Text style={{ width: 190, fontSize: 11, fontWeight: "bold", color: "#FFFFFF" }}>PARAMETRO CLINICO</Text>
+                          {comparisonData.sorted.map((v, i) => (
+                            <Text key={v.id || i} style={{ width: 100, fontSize: 11, fontWeight: "bold", color: "#38BDF8", textAlign: "center" }}>
+                              {i === 0 ? `V1 (${v.data})` : (i === comparisonData.sorted.length - 1 ? `Oggi (${v.data})` : `V${i+1} (${v.data})`)}
+                            </Text>
+                          ))}
+                          <Text style={{ width: 90, fontSize: 11, fontWeight: "bold", color: "#4ADE80", textAlign: "center" }}>
+                            Δ TOTALE
+                          </Text>
+                        </View>
+
+                        {/* Righe Tabella */}
+                        {[
+                          ["Peso Corporeo", (r) => `${r.peso || "-"} kg`, comparisonData.deltaTot.peso.str + " kg", true],
+                          ["Massa Muscolare (kg)", (r) => `${r.muscolo?.kg || "-"} kg`, comparisonData.deltaTot.muscKg.str + " kg", true, "#F0FDF4"],
+                          ["Massa Muscolare (%)", (r) => `${r.muscolo?.pct || "-"}%`, comparisonData.deltaTot.muscPct.str + "%", true, "#F0FDF4"],
+                          ["Massa Grassa (kg)", (r) => `${r.grasso?.kg || "-"} kg`, comparisonData.deltaTot.fatKg.str + " kg", true, "#FEF2F2"],
+                          ["Massa Grassa (%)", (r) => `${r.grasso?.pct || "-"}%`, comparisonData.deltaTot.fatPct.str + "%", true, "#FEF2F2"],
+                          ["Grasso Essenziale (%)", (r) => `${r.grasso?.essenziale || "-"}%`, "-", false],
+                          ["Grasso Viscerale (%)", (r) => `${r.grasso?.viscerale || "-"}%`, "-", false],
+                          ["Massa Ossea (kg)", (r) => `${r.ossa?.kg || "-"} kg`, "-", false],
+                          ["Liquidi / Residuo (kg)", (r) => `${r.altro?.kg || "-"} kg`, "-", false],
+                          ["BMR FITcompX (kcal)", (r) => `${r.metabolismo?.bmrFITcompX || "-"}`, comparisonData.deltaTot.bmr.str, false],
+                          ["SOMMA 6 PLICHE (mm)", (r) => `${r.pliche?.sommaPliche || "-"} mm`, comparisonData.deltaTot.sommaPliche.str + " mm", true, "#EFF6FF"],
+                          ["• Tricipite (mm)", (r) => `${r.pliche?.tricipite || "-"}`, "-", false],
+                          ["• Sottoscapolare (mm)", (r) => `${r.pliche?.scapola || "-"}`, "-", false],
+                          ["• Torace / Petto (mm)", (r) => `${r.pliche?.torace || "-"}`, "-", false],
+                          ["• Addominale (mm)", (r) => `${r.pliche?.addominale || "-"}`, "-", false],
+                          ["• Soprailiaca (mm)", (r) => `${r.pliche?.iliaca || "-"}`, "-", false],
+                          ["• Coscia (mm)", (r) => `${r.pliche?.coscia || "-"}`, "-", false],
+                          ["Circonferenza Vita (cm)", (r) => `${r.circ?.vita || "-"} cm`, comparisonData.deltaTot.vita.str + " cm", true],
+                          ["Circonferenza Fianchi (cm)", (r) => `${r.circ?.fianchi || "-"} cm`, comparisonData.deltaTot.fianchi.str + " cm", false],
+                          ["Circonferenza Braccio (cm)", (r) => `${r.circ?.braccio || "-"} cm`, comparisonData.deltaTot.braccio.str + " cm", false],
+                        ].map(([label, getVal, dVal, isBold, bgCol], rowIdx) => (
+                          <View
+                            key={rowIdx}
+                            style={{
+                              flexDirection: "row",
+                              paddingVertical: 6,
+                              paddingHorizontal: 6,
+                              backgroundColor: bgCol || (rowIdx % 2 === 0 ? "#FFFFFF" : "#F8FAFC"),
+                              borderBottomWidth: 1,
+                              borderColor: "#E2E8F0",
+                              alignItems: "center",
+                            }}
+                          >
+                            <Text style={{ width: 190, fontSize: 11, fontWeight: isBold ? "bold" : "normal", color: "#1E293B" }}>
+                              {label}
+                            </Text>
+                            {comparisonData.sorted.map((v, i) => (
+                              <Text key={v.id || i} style={{ width: 100, fontSize: 11, color: "#334155", textAlign: "center", fontWeight: isBold ? "600" : "normal" }}>
+                                {getVal(v.risultati || {})}
+                              </Text>
+                            ))}
+                            <Text style={{ width: 90, fontSize: 11, fontWeight: "bold", color: "#166534", textAlign: "center" }}>
+                              {dVal}
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    </ScrollView>
+                  </View>
+
+                  {/* SEZIONE 4: DIAGNOSI CLINICA DELL ULTIMA VISITA */}
+                  {comparisonData.last.risultati?.diagnosi ? (
+                    <View style={{ backgroundColor: "#F0FDF4", borderWidth: 1, borderColor: "#86EFAC", borderRadius: 10, padding: 12 }}>
+                      <Text style={{ fontSize: 12, fontWeight: "bold", color: "#166534", marginBottom: 4 }}>
+                        🩺 Valutazione Clinica Ultima Visita ({comparisonData.last.data}):
+                      </Text>
+                      <Text style={{ fontSize: 12, color: "#14532D", lineHeight: 18 }}>
+                        {comparisonData.last.risultati.diagnosi}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
     </View>
   );
 }
