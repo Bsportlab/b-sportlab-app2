@@ -283,10 +283,40 @@ export async function eliminaPesoPaziente(codice, data) {
 
 export async function calcolaAntropometriaServer(misure) {
   try {
+    const formattedPayload = {
+      peso: parseFloat(String(misure.peso || 70).replace(',', '.')),
+      altezza: parseFloat(String(misure.altezza || 175).replace(',', '.')),
+      sesso: String(misure.sesso || 'M').toUpperCase(),
+      eta: parseFloat(String(misure.eta || 25).replace(',', '.')),
+      fcr: parseFloat(String(misure.fcr || 60).replace(',', '.')),
+      pliche: {
+        tricipite: parseFloat(String(misure.tricipite || misure.pliche?.tricipite || 6).replace(',', '.')),
+        sottoscapola: parseFloat(String(misure.scapola || misure.sottoscapola || misure.pliche?.sottoscapola || 8).replace(',', '.')),
+        scapola: parseFloat(String(misure.scapola || misure.sottoscapola || misure.pliche?.scapola || 8).replace(',', '.')),
+        torace: parseFloat(String(misure.torace || misure.pliche?.torace || 6).replace(',', '.')),
+        addominale: parseFloat(String(misure.addominale || misure.pliche?.addominale || 10).replace(',', '.')),
+        iliaca: parseFloat(String(misure.iliaca || misure.pliche?.iliaca || 6).replace(',', '.')),
+        coscia: parseFloat(String(misure.coscia || misure.pliche?.coscia || 8).replace(',', '.')),
+      },
+      circonferenze: {
+        braccio: parseFloat(String(misure.braccio || misure.circonferenze?.braccio || 30).replace(',', '.')),
+        vita: parseFloat(String(misure.vita || misure.circonferenze?.vita || 78).replace(',', '.')),
+        fianchi: parseFloat(String(misure.fianchi || misure.circonferenze?.fianchi || 95).replace(',', '.')),
+        coscia_radice: parseFloat(String(misure.cosciaRadice || misure.coscia_radice || misure.circonferenze?.coscia_radice || 54).replace(',', '.')),
+        coscia_mediana: parseFloat(String(misure.cosciaMediana || misure.coscia_mediana || misure.circonferenze?.coscia_mediana || 50).replace(',', '.')),
+      },
+      diametri: {
+        polso: parseFloat(String(misure.polso || misure.diametri?.polso || 5.5).replace(',', '.')),
+        gomito: parseFloat(String(misure.gomito || misure.diametri?.gomito || 6.8).replace(',', '.')),
+        ginocchio: parseFloat(String(misure.ginocchio || misure.diametri?.ginocchio || 9.5).replace(',', '.')),
+        caviglia: parseFloat(String(misure.caviglia || misure.diametri?.caviglia || 7.0).replace(',', '.')),
+      },
+      ...misure,
+    };
     const res = await fetch(`${cleanUrl}/rest/v1/rpc/calcola_antropometria`, {
       method: 'POST',
       headers: makeHeaders(),
-      body: JSON.stringify({ p_misure: misure }),
+      body: JSON.stringify({ p_misure: formattedPayload }),
     });
     if (res.ok) {
       const data = await res.json();
