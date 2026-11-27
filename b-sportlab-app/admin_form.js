@@ -44,7 +44,12 @@ export default function AdminForm({
   loading,
   msg,
 }) {
-  const [appUrl, setAppUrl] = useState('https://b-sportlab-app.vercel.app');
+  const [appUrl, setAppUrl] = useState(() => {
+    if (typeof window !== 'undefined' && window.location && window.location.origin) {
+      return window.location.origin;
+    }
+    return 'https://b-sportlab-app2.vercel.app';
+  });
 
   // Stato per l'aggiunta rapida di un nuovo integratore
   const [newIntNome, setNewIntNome] = useState('');
@@ -494,11 +499,12 @@ export default function AdminForm({
     const code = cur.codice ? cur.codice.trim().toUpperCase() : '';
     if (!code) return;
     const l = cur.piano_dati?.lingua || 'it';
-    let text = `Ciao! Ecco il tuo accesso personale al piano nutrizionale B-sportlab (Federico Baldassarre).\n\n🔗 Link App: ${appUrl}\n🔑 Codice personale: ${code}`;
+    const directLink = `${appUrl}/?code=${encodeURIComponent(code)}`;
+    let text = `Ciao! Ecco il tuo accesso personale al piano nutrizionale B-sportlab (Dott. Federico Baldassarre).\n\n🔗 Link Diretto al tuo Piano:\n${directLink}\n\n🔑 Il tuo Codice Paziente: ${code}\n\n(Toccando il link sopra entrerai direttamente nel tuo piano nutrizionale!)`;
     if (l === 'en') {
-      text = `Hi! Here is your personal access to your B-sportlab nutrition plan (Federico Baldassarre).\n\n🔗 App Link: ${appUrl}\n🔑 Personal Code: ${code}`;
+      text = `Hi! Here is your personal access to your B-sportlab nutrition plan (Dr. Federico Baldassarre).\n\n🔗 Direct Plan Link:\n${directLink}\n\n🔑 Personal Code: ${code}\n\n(Tap the link above to access your plan directly!)`;
     } else if (l === 'fr') {
-      text = `Bonjour! Voici votre accès personnel au plan nutritionnel B-sportlab (Federico Baldassarre).\n\n🔗 Lien App: ${appUrl}\n🔑 Code personnel: ${code}`;
+      text = `Bonjour! Voici votre accès personnel au plan nutritionnel B-sportlab (Dr. Federico Baldassarre).\n\n🔗 Lien direct:\n${directLink}\n\n🔑 Code personnel: ${code}\n\n(Appuyez sur le lien ci-dessus pour accéder directement à votre plan!)`;
     }
     const url = `https://wa.me/?text=${encodeURI(text)}`;
     Linking.openURL(url).catch(() => {
