@@ -25,14 +25,25 @@
     <link rel="manifest" href="/manifest.json" />
 
     <style>
-      html, body, #root {
+      html, body {
         width: 100%;
         height: 100%;
         margin: 0;
         padding: 0;
-        overflow: hidden;
         -webkit-text-size-adjust: 100%;
         background-color: #000000;
+        overflow-x: hidden;
+      }
+      #root {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      /* Assicura che i contenitori di scroll di React Native Web scorrano fluidamente su iOS e Android */
+      div[style*="overflow-y: auto"], div[style*="overflow-y: scroll"] {
+        -webkit-overflow-scrolling: touch;
       }
     </style>
   </head>
