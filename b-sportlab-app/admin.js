@@ -70,7 +70,7 @@ export default function AdminPanel({ onLogout }) {
     const norm = normalizePaziente({
       codice: '',
       attivo: true,
-      peso_visita: '70',
+      peso_visita: '',
       metodo: targetMetodo,
       coeff_carbo: '2.0',
       note_dottore: '',
@@ -79,9 +79,20 @@ export default function AdminPanel({ onLogout }) {
       stagione: 'all',
       integratori: [],
       storico_piani: [],
+      anagrafica: {
+        nome: '',
+        cognome: '',
+        sesso: 'M',
+        data_nascita: '',
+        codice_fiscale: '',
+        telefono: '',
+        email: '',
+        residenza: '',
+        altezza: '',
+      },
       piano_dati: {
         metodo: targetMetodo,
-        bmr_base: '1500',
+        bmr_base: '',
         coeff_laf: '1.2',
       },
     });
