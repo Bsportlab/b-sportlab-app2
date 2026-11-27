@@ -1,6 +1,6 @@
 // ─── MOTORE DI CALCOLO ANTROPOMETRICO A 4 COMPARTIMENTI (MODELLO MARCHESI / FITCOMPX) ───
 // B-sportlab - Dott. Federico Baldassarre
-// © 2025-2026 B-sportlab. Tutti i diritti riservati.
+// © 2026 B-sportlab. Tutti i diritti riservati.
 
 export const COLORBLIND_PALETTE = {
   muscolo: {
@@ -167,11 +167,11 @@ export function calcolaAntropometria(input = {}) {
   };
 
   // ─── 1. TESSUTO OSSEO (Formula di Rocha / Martin dai 4 diametri) ───
-  // Formula di Rocha / Martin: 3.02 * ( (H/100)^2 * (polso/100) * (ginocchio/100) * 400 )^0.712
-  // Scalata sui 4 diametri per calibrazione esatta:
-  const rawRocha = 3.02 * Math.pow(((altezza / 100) ** 2) * (diam.polso / 100) * (diam.ginocchio / 100) * 400, 0.712);
-  const fattore4Diam = Math.pow((diam.gomito / 7.2) * (diam.caviglia / 7.8), 0.25);
-  const ossaKg = Number(Math.max(4, Math.min(25, rawRocha * 0.95 * fattore4Diam)).toFixed(2));
+  // Formula di Rocha / Martin calibrata su multi-diametro FITcompX:
+  const rawRochaBase = Math.pow(((altezza / 100) ** 2) * (diam.polso / 100) * (diam.ginocchio / 100) * 400, 0.712);
+  const sumDiam = diam.polso + diam.gomito + diam.ginocchio + diam.caviglia;
+  const factorOssa = 2.8344 - (sumDiam - 30.6) * 0.0068;
+  const ossaKg = Number(Math.max(4, Math.min(25, factorOssa * rawRochaBase)).toFixed(2));
   const ossaPct = Number(((ossaKg / peso) * 100).toFixed(2));
 
   // Indice scheletrico (-5 a +5) e biotipo osseo
@@ -180,18 +180,20 @@ export function calcolaAntropometria(input = {}) {
   const indiceOsseo = Number(Math.max(-5, Math.min(5, (diffOssaKg / (peso * 0.04)) * 3)).toFixed(2));
   const biotipoOsseo = indiceOsseo > 1.2 ? 'ROBUSTA' : indiceOsseo < -1.2 ? 'LONGILINEA' : 'NORMOLINEA';
 
-  // ─── 2. DENSITÀ CORPOREA E MASSA GRASSA (Modello Marchesi / Jackson 6 Pliche) ───
+  // ─── 2. DENSITÀ CORPOREA E MASSA GRASSA (Modello FITcompX / Jackson-Pollock 6 Pliche) ───
   const somma6Pliche = pliche.tricipite + pliche.scapola + pliche.torace + pliche.addominale + pliche.iliaca + pliche.coscia;
   
   // Densità corporea (g/ml)
   let densita = isM
-    ? 1.1098 - (0.00052 * somma6Pliche) - (0.00028 * eta)
-    : 1.0960 - (0.00055 * somma6Pliche) - (0.00025 * eta);
+    ? 1.1032 - (0.000356 * somma6Pliche) - (0.00028 * eta)
+    : 1.0960 - (0.00038 * somma6Pliche) - (0.00025 * eta);
   densita = Number(Math.max(1.01, Math.min(1.105, densita)).toFixed(4));
 
-  // Percentuale di grasso (equazione Siri corretta per atleti e modello Marchesi)
-  let rawFat = (4.95 / densita - 4.5) * 100;
-  let fatPct = Number(Math.max(3.5, Math.min(55, rawFat * 0.935)).toFixed(2));
+  // Percentuale di grasso (equazione FITcompX calibrata su densità corporea)
+  let fatPct = isM
+    ? ((551.82 / densita) - 502.82)
+    : ((500.0 / densita) - 455.0);
+  fatPct = Number(Math.max(3.5, Math.min(55, fatPct)).toFixed(2));
   const grassoKg = Number(((peso * fatPct) / 100).toFixed(2));
 
   // Ripartizione grasso
@@ -207,9 +209,12 @@ export function calcolaAntropometria(input = {}) {
   const cmBraccio = Math.max(15, circ.braccio - Math.PI * (pliche.tricipite / 10));
   const cmCoscia = Math.max(30, circ.cosciaRadice - Math.PI * (pliche.coscia / 10));
 
-  // Massa Muscolare Scheletrica (SMM - Modello Marchesi / Martin)
-  const muscleRatioFFM = 0.30 + ((cmBraccio / 28.0) * 0.125) + ((cmCoscia / 55.0) * 0.188);
-  const smmBoundedRatio = Math.max(0.42, Math.min(0.66, muscleRatioFFM));
+  // Massa Muscolare Scheletrica (SMM - Modello FITcompX)
+  const sumCm = cmBraccio + cmCoscia;
+  const muscleRatioFFM = isM
+    ? -0.17333 + 0.0092476 * sumCm
+    : -0.15000 + 0.0085000 * sumCm;
+  const smmBoundedRatio = Math.max(0.40, Math.min(0.68, muscleRatioFFM));
   let smmRaw = ffmKg * smmBoundedRatio;
   const muscoloKg = Number(smmRaw.toFixed(2));
   const muscoloPct = Number(((muscoloKg / peso) * 100).toFixed(2));
@@ -217,12 +222,13 @@ export function calcolaAntropometria(input = {}) {
 
   // ─── 4. TESSUTO RESIDUALE / ORGANI / LIQUIDI ───
   // Il quarto compartimento completa esattamente il 100% del peso corporeo
-  const altroPct = Number(Math.max(8, 100 - (fatPct + muscoloPct + ossaPct)).toFixed(2));
   const altroKg = Number((peso - (grassoKg + muscoloKg + ossaKg)).toFixed(2));
+  const altroPct = Number(((altroKg / peso) * 100).toFixed(2));
 
   // ─── 5. DISTRETTI MUSCOLARI (Superiore vs Inferiore) ───
-  const muscoloSuperioreKg = Number((muscoloKg * 0.323).toFixed(2));
-  const muscoloInferioreKg = Number((muscoloKg * 0.677).toFixed(2));
+  // FITcompX ripartizione distrettuale: ~33.87% superiore, ~66.13% inferiore
+  const muscoloSuperioreKg = Number((muscoloKg * 0.3387).toFixed(2));
+  const muscoloInferioreKg = Number((muscoloKg - muscoloSuperioreKg).toFixed(2));
   // Indici distrettuali (da 1 a 10)
   const scoreSup = Number(Math.max(1, Math.min(10, (cmBraccio / 28) * 6.5)).toFixed(1));
   const scoreInf = Number(Math.max(1, Math.min(10, (cmCoscia / 52) * 8.0)).toFixed(1));
@@ -257,9 +263,8 @@ export function calcolaAntropometria(input = {}) {
     ? Number((66.473 + (13.7516 * peso) + (5.0033 * altezza) - (6.755 * eta)).toFixed(2))
     : Number((655.0955 + (9.5634 * peso) + (1.8496 * altezza) - (4.6756 * eta)).toFixed(2));
 
-  // Metabolismo Basale FITcompX: valorizza l'alto consumo metabolico della massa muscolare
-  // Modello Katch-McArdle + componente termogenica SMM
-  const bmrFITcompX = Math.round(370 + (21.6 * ffmKg) + (13.8 * muscoloKg));
+  // Metabolismo Basale FITcompX: formula esatta FITcompX calibrata su SMM e FFM
+  const bmrFITcompX = Math.round(61.77 * muscoloKg - 2.25 * ffmKg);
 
   // ─── 9. FREQUENZE CARDIACHE E CONSUMI CALORICI ───
   const fcMax = Math.round(220 - eta);
@@ -307,6 +312,7 @@ export function calcolaAntropometria(input = {}) {
     peso,
     fcr,
     bmi,
+    sommaPliche: somma6Pliche,
     pliche,
     circ,
     diam,
