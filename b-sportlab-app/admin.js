@@ -151,7 +151,7 @@ export default function AdminPanel({ onLogout }) {
   };
 
   return (
-    <SafeAreaView style={s.bg}>
+    <SafeAreaView style={[s.bg, { flex: 1, minHeight: 0 }]}>
       <View style={s.top}>
         <Image
           source={require('./assets/logo.png')}
@@ -177,7 +177,7 @@ export default function AdminPanel({ onLogout }) {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={s.pad}>
+      <ScrollView style={{ flex: 1, minHeight: 0 }} contentContainerStyle={[s.pad, { flexGrow: 1, paddingBottom: 120 }]}>
         {!cur ? (
           <View>
             <View style={s.rowBet}>
