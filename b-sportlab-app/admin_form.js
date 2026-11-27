@@ -754,7 +754,7 @@ export default function AdminForm({
     const directLink = `${appUrl}/?code=${encodeURIComponent(code)}`;
     const pNome = (cur.anagrafica?.nome || '').trim();
     const ciaoStr = pNome ? `Ciao ${pNome}!` : 'Ciao!';
-    let text = `${ciaoStr} Ecco il tuo accesso personale al piano nutrizionale B-sportlab (Dott. Federico Baldassarre).\n\n🔗 Link Diretto al tuo Piano:\n${directLink}\n\n🔑 Il tuo Codice Paziente: ${code}\n\n(Toccando il link sopra entrerai direttamente nel tuo piano nutrizionale!)`;
+    let text = `${ciaoStr} Ecco il tuo accesso personale al piano nutrizionale B-sportlab (Dott. Federico Baldassarre).\n\n🔗 Link Diretto al tuo Piano:\n${directLink}\n\n🔑 Il tuo Codice Paziente: ${code}\n\n(Toccando il link troverai il tuo codice già inserito: tocca "ENTRA NEL PIANO" per iniziare!)`;
     if (l === 'en') {
       const hiStr = pNome ? `Hi ${pNome}!` : 'Hi!';
       text = `${hiStr} Here is your personal access to your B-sportlab nutrition plan (Dr. Federico Baldassarre).\n\n🔗 Direct Plan Link:\n${directLink}\n\n🔑 Personal Code: ${code}\n\n(Tap the link above to access your plan directly!)`;
