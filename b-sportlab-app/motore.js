@@ -567,12 +567,23 @@ export const computeDailyTargets = (paziente, { dayType, dayName, slots = [], at
 
     if (isWorkoutDay) {
       hasWorkout = true;
-      const matched = workouts.find((w) => w.id === fitnessWorkoutId) || workouts[0] || { delta_kcal: 300 };
-      const deltaKcal = toNum(matched.delta_kcal) || 300;
-      const extraC = Math.round(deltaKcal / 4);
-      totP = toNum(riposo.p);
-      totF = toNum(riposo.f);
-      totC = toNum(riposo.c) + extraC;
+      const matched = workouts.find((w) => w.id === fitnessWorkoutId) || workouts[0] || { delta_kcal: 350 };
+      
+      // Se sono definiti i grammi specifici del giorno di allenamento (P, F, C):
+      if (matched.p !== undefined && matched.f !== undefined && matched.c !== undefined && (matched.p !== '' || matched.c !== '')) {
+        totP = toNum(matched.p);
+        totF = toNum(matched.f);
+        totC = toNum(matched.c);
+      } else {
+        // Stima di default bilanciata: aumentano proteine, lipidi e carboidrati
+        const deltaKcal = toNum(matched.delta_kcal) || 350;
+        const extraP = Math.round((deltaKcal * 0.20) / 4);
+        const extraF = Math.round((deltaKcal * 0.20) / 9);
+        const extraC = Math.round((deltaKcal * 0.60) / 4);
+        totP = toNum(riposo.p) + extraP;
+        totF = toNum(riposo.f) + extraF;
+        totC = toNum(riposo.c) + extraC;
+      }
     } else {
       hasWorkout = false;
       totP = toNum(riposo.p);
