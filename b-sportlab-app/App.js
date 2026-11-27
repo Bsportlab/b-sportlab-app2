@@ -455,6 +455,8 @@ const allTargetDays = useMemo(() => {
     setQuizDone(true);
   };
 
+  const patientName = (paziente?.anagrafica?.nome || paziente?.nome || '').trim();
+
   let screenContent = null;
 
   if (role === 'doctor') {
@@ -496,7 +498,9 @@ const allTargetDays = useMemo(() => {
                 <Text style={{ fontSize: 10, fontWeight: 'bold', color: profileBadge.col }}>{profileBadge.lbl}</Text>
               </View>
             </View>
-            <Text style={s.doc} numberOfLines={1}>{t.patientLbl}: {paziente.codice}</Text>
+            <Text style={s.doc} numberOfLines={1}>
+              {patientName ? `Ciao ${patientName}! • ${paziente.codice}` : `${t.patientLbl}: ${paziente.codice}`}
+            </Text>
           </View>
           <View style={{ flexShrink: 0 }}>
             <TouchableOpacity onPress={handleLogout}>
@@ -506,7 +510,9 @@ const allTargetDays = useMemo(() => {
         </View>
         <ScrollView style={{ flex: 1, minHeight: 0 }} contentContainerStyle={[s.pad, { flexGrow: 1, paddingBottom: 100 }]}>
           <View style={s.wBox}>
-            <Text style={s.wTit}>{t.quizTitle}</Text>
+            <Text style={s.wTit}>
+              {patientName ? `Ciao ${patientName}! Organizziamo la tua giornata 📋` : t.quizTitle}
+            </Text>
             <Text style={s.wSub}>{t.quizSub}</Text>
           </View>
 
@@ -838,7 +844,9 @@ const allTargetDays = useMemo(() => {
               <Text style={{ fontSize: 10, fontWeight: 'bold', color: profileBadge.col }}>{profileBadge.lbl}</Text>
             </View>
           </View>
-          <Text style={s.doc} numberOfLines={1}>{t.patientLbl}: {paziente.codice}</Text>
+          <Text style={s.doc} numberOfLines={1}>
+            {patientName ? `Ciao ${patientName}! • ${paziente.codice}` : `${t.patientLbl}: ${paziente.codice}`}
+          </Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 0 }}>
           <TouchableOpacity onPress={() => setQuizDone(false)}>
@@ -870,6 +878,18 @@ const allTargetDays = useMemo(() => {
       <ScrollView style={{ flex: 1, minHeight: 0 }} contentContainerStyle={[s.pad, { flexGrow: 1, paddingBottom: 120 }]}>
         {tab === 'calc' ? (
           <View>
+            {/* Banner Benvenuto Personalizzato con Nome Paziente */}
+            {patientName ? (
+              <View style={{ marginBottom: 12, paddingVertical: 10, paddingHorizontal: 14, backgroundColor: '#F0FDF4', borderRadius: 10, borderWidth: 1, borderColor: '#86EFAC' }}>
+                <Text style={{ fontSize: 16, fontWeight: '800', color: '#166534' }}>
+                  👋 Ciao {patientName}!
+                </Text>
+                <Text style={{ fontSize: 12, color: '#15803D', marginTop: 2 }}>
+                  Benvenuto nel tuo piano nutrizionale personalizzato B-sportlab.
+                </Text>
+              </View>
+            ) : null}
+
             {paziente.note_dottore && normPaz?.mostra_note_dottore !== false ? (
               <View style={[s.wBox, { backgroundColor: '#FEFCBF', borderColor: '#D69E2E' }]}>
                 <Text style={[s.wTit, { color: '#744210' }]}>{t.notesTitle}</Text>
