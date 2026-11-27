@@ -188,6 +188,7 @@ export default function SchermataCodicePaziente({
   return (
     <View style={styles.screen}>
       <ScrollView
+        style={{ flex: 1, minHeight: 0 }}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
@@ -351,12 +352,13 @@ const ERROR_RED = '#F87171';
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
+    minHeight: 0,
     backgroundColor: BG_BLACK,
   },
   scrollContent: {
     flexGrow: 1,
     paddingTop: 28,
-    paddingBottom: 40,
+    paddingBottom: 80,
   },
   container: {
     width: '100%',
