@@ -575,6 +575,7 @@ export function ShopTab({
 export function SupplementsPanel({ paziente, daily, lang = 'it' }) {
   const t = UI[lang] || UI.it;
   const norm = M.normalizePaziente(paziente);
+  const nomePaziente = [norm.anagrafica?.nome, norm.anagrafica?.cognome].filter(Boolean).join(' ') || (norm.anagrafica?.nome || '').trim();
   const integratori = norm.integratori || [];
   const metodo = norm.metodo;
 
@@ -850,11 +851,19 @@ export const buildProspectusText = (paziente, daily, lang = 'it') => {
     lines.push(`• Giornata di Riposo: ~${kcalRiposo} kcal`);
     lines.push(`  P: ${r.p}g | L: ${r.f}g | C: ${r.c}g`);
     (pData.workouts_fitness || []).forEach((w, idx) => {
-      const extraC = Math.round((Number(w.delta_kcal) || 0) / 4);
-      const totC = Number(r.c || 0) + extraC;
-      const totKcal = (Number(r.p || 0) * 4) + (Number(r.f || 0) * 9) + (totC * 4);
-      lines.push(`• ${w.nome || `Allenamento ${idx + 1}`}: +${w.delta_kcal} kcal (tot ~${totKcal} kcal)`);
-      lines.push(`  Carboidrati: ${totC}g (+${extraC}g rispetto al riposo)`);
+      let pW = Number(w.p);
+      let fW = Number(w.f);
+      let cW = Number(w.c);
+      if (isNaN(pW) || isNaN(cW) || isNaN(fW) || (!w.p && !w.c)) {
+        const deltaKcal = Number(w.delta_kcal) || 350;
+        pW = Number(r.p || 0) + Math.round((deltaKcal * 0.20) / 4);
+        fW = Number(r.f || 0) + Math.round((deltaKcal * 0.20) / 9);
+        cW = Number(r.c || 0) + Math.round((deltaKcal * 0.60) / 4);
+      }
+      const totKcal = (pW * 4) + (fW * 9) + (cW * 4);
+      const diffKcal = totKcal - kcalRiposo;
+      lines.push(`• ${w.nome || `Allenamento ${idx + 1}`}: ~${totKcal} kcal (${diffKcal >= 0 ? `+${diffKcal}` : diffKcal} kcal vs riposo)`);
+      lines.push(`  P: ${pW}g | L: ${fW}g | C: ${cW}g`);
     });
     lines.push(`• Idratazione: ${(peso * 33 / 1000).toFixed(1)} L (riposo) / ${((peso * 33 + 500) / 1000).toFixed(1)} L (allenamento)`);
   } else if (norm.metodo === 'ATLETA') {
@@ -1279,7 +1288,7 @@ M.MEALS.forEach((m) => {
     s += '0.2 0.25 0.3 rg\n/F1 7 Tf\n1 0 0 1 410.00 24.00 Tm\n(Torino - Corso Moncalieri 47) Tj\n';
     s += '0.2 0.25 0.3 rg\n/F1 7 Tf\n1 0 0 1 410.00 15.00 Tm\n(Sanremo - Piazza C. Colombo 4) Tj\n';
     // Copyright B-sportlab
-    s += '0.45 0.5 0.55 rg\n/F1 6.5 Tf\n1 0 0 1 40.00 8.00 Tm\n(Copyright \\(c\\) 2025-2026 B-sportlab di Federico Baldassarre. Tutti i diritti riservati - Biologo Nutrizionista Sportivo) Tj\n';
+    s += '0.45 0.5 0.55 rg\n/F1 6.5 Tf\n1 0 0 1 40.00 8.00 Tm\n(Copyright \\(c\\) 2026 B-sportlab di Federico Baldassarre. Tutti i diritti riservati - Biologo Nutrizionista Sportivo) Tj\n';
     s += 'ET\n';
 
     contentStreams.push(s);
@@ -1540,7 +1549,7 @@ export function buildAntropoPdfData({ norm, visit, lang = 'it' }) {
   s += '0.2 0.25 0.3 rg\n/F1 7 Tf\n1 0 0 1 410.00 15.00 Tm\n(Sanremo - Piazza C. Colombo 4) Tj\n';
 
   // LINEA COPYRIGHT B-SPORTLAB
-  s += '0.45 0.5 0.55 rg\n/F1 6.5 Tf\n1 0 0 1 40.00 8.00 Tm\n(Copyright \\(c\\) 2025-2026 B-sportlab di Federico Baldassarre. Tutti i diritti riservati - Biologo Nutrizionista Sportivo) Tj\n';
+  s += '0.45 0.5 0.55 rg\n/F1 6.5 Tf\n1 0 0 1 40.00 8.00 Tm\n(Copyright \\(c\\) 2026 B-sportlab di Federico Baldassarre. Tutti i diritti riservati - Biologo Nutrizionista Sportivo) Tj\n';
   s += 'ET\n';
 
   let imgBinaryStr = '';
@@ -2077,7 +2086,7 @@ export function ProfileTab({
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 8 }}>
           <View style={{ flex: 1, minWidth: 160 }}>
             <Text style={[s.bold, { fontSize: 16, color: "#0F172A" }]}>
-              {t.patientLbl || "Paziente"}: {norm.codice}
+              {nomePaziente ? `${nomePaziente} (${norm.codice})` : `${t.patientLbl || "Paziente"}: ${norm.codice}`}
             </Text>
             <Text style={[s.txt, { color: "#64748B", marginTop: 2 }]}>
               Peso Visita: {peso} kg • Data: {M.formatDateDMY(new Date())}
@@ -2548,7 +2557,7 @@ export function ProfileTab({
       {/* ─── COPYRIGHT & RISERVATEZZA ─── */}
       <View style={{ marginTop: 20, marginBottom: 8, alignItems: "center" }}>
         <Text style={{ fontSize: 11, color: "#94A3B8", textAlign: "center" }}>
-          © 2025-2026 B-sportlab di Federico Baldassarre. Tutti i diritti riservati.{'\n'}
+          © 2026 B-sportlab di Federico Baldassarre. Tutti i diritti riservati.{'\n'}
           Software e contenuti protetti da copyright.
         </Text>
       </View>
