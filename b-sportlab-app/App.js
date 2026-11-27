@@ -43,7 +43,18 @@ export default function App() {
   const [lang, setLang] = useState('it');
   const [role, setRole] = useState(null);
   const [paziente, setPaziente] = useState(null);
-  const [passInput, setPassInput] = useState('');
+  const [passInput, setPassInput] = useState(() => {
+    if (typeof window !== 'undefined' && window.location && window.location.search) {
+      try {
+        const searchParams = new URLSearchParams(window.location.search);
+        const urlCode = searchParams.get('code') || searchParams.get('c') || searchParams.get('paziente') || searchParams.get('p');
+        return urlCode ? urlCode.trim().toUpperCase() : '';
+      } catch (e) {
+        return '';
+      }
+    }
+    return '';
+  });
   const [passErr, setPassErr] = useState('');
   const [waMessage] = useState(DEFAULT_WA_MESSAGE);
   const [quizDone, setQuizDone] = useState(false);
@@ -181,7 +192,8 @@ const [diaryEntries, setDiaryEntries] = useState({ Colazione: [], Pranzo: [], Me
       } else if (urlCode) {
         const cleanCode = urlCode.trim().toUpperCase();
         setPassInput(cleanCode);
-        syncPaziente(cleanCode);
+        // Si ferma sulla schermata di blocco con il codice già precompilato nella barra;
+        // il paziente preme "ENTRA NEL PIANO" per accedere.
       } else if (d?.savedCode) {
         syncPaziente(d.savedCode);
       }
