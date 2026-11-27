@@ -18,12 +18,14 @@ export function TourGuidatoModal({ visible, onClose, paziente, onNeverShowAgain 
   const slides = useMemo(() => {
     const list = [];
 
+    const nome = (paziente?.anagrafica?.nome || paziente?.nome || '').trim();
+
     // ─── SLIDE 1: BENVENUTO ───
     list.push({
       id: 'welcome',
-      icon: '🏆',
-      title: 'Benvenuto in B-sportlab!',
-      subtitle: 'Il tuo ecosistema nutrizionale e atletico personalizzato.',
+      icon: '👋',
+      title: nome ? `Ciao ${nome}, benvenuto in B-sportlab!` : 'Benvenuto in B-sportlab!',
+      subtitle: nome ? `Ecco il tuo ecosistema nutrizionale e atletico su misura.` : 'Il tuo ecosistema nutrizionale e atletico personalizzato.',
       body: (
         <View style={{ gap: 10 }}>
           <Text style={{ fontSize: 13.5, color: '#334155', lineHeight: 19 }}>
